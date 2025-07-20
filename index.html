@@ -1,116 +1,122 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>فتح تطبيق مزن</title>
-    <style>
-      body {
-        font-family: 'Cairo', Arial, sans-serif;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        margin: 0;
-        background: #f7fafd;
-        color: #222;
-      }
-      .container {
-        text-align: center;
-        background: #fff;
-        padding: 2.5em 2em;
-        border-radius: 18px;
-        box-shadow: 0 4px 24px 0 rgba(20,140,177,0.07);
-        border: 2px solid #148CB1;
-      }
-      .logo {
-        font-size: 2.4em;
-        color: #148CB1;
-        margin-bottom: 0.2em;
-        font-weight: bold;
-        letter-spacing: 1px;
-      }
-      .open-btn {
-        background: #148CB1;
-        color: #fff;
-        padding: 0.85em 2.4em;
-        border: none;
-        border-radius: 22px;
-        font-size: 1.3em;
-        cursor: pointer;
-        margin-top: 1.4em;
-        box-shadow: 0 2px 10px 0 rgba(20,140,177,0.09);
-        transition: background 0.2s;
-      }
-      .open-btn:hover {
-        background: #117295;
-      }
-      .fallback-links {
-        margin-top: 1.6em;
-        font-size: 1.1em;
-      }
-      .fallback-links a {
-        color: #148CB1;
-        text-decoration: none;
-      }
-      .dev-link {
-        margin-top: 2.6em;
-        font-size: 0.98em;
-        color: #148CB1;
-      }
-      .dev-link a {
-        color: #148CB1;
-        text-decoration: underline;
-      }
-    </style>
-    <script>
-      function openMznApp() {
-        const doctorCode = window.location.pathname.split("/").pop();
-        const deepLink = `mzn://doctor/${doctorCode}`;
-        window.location = deepLink;
-        setTimeout(function () {
-          document.getElementById('fallback').style.display = 'block';
-        }, 1800);
-      }
-      window.onload = function() {
-        // لا تفتح مباشر، خلي المستخدم يضغط الزر
-        document.getElementById('open-btn').onclick = openMznApp;
-      }
-    </script>
-  </head>
-  <body>
-    <div class="container">
-      <div class="logo">مزن</div>
-      <h2>فتح تطبيق مزن</h2>
-      <button id="open-btn" class="open-btn">إفتح التطبيق الآن</button>
-      <div id="fallback" class="fallback-links" style="display:none;">
-        <p>لم يتم الفتح؟ يمكنك تنزيل التطبيق:</p>
-        <p>
-          <span id="android-link" style="display:none;">
-            <a href="https://play.google.com/store/apps/details?id=com.mzn.patients" target="_blank">تحميل للأندرويد</a>
-          </span>
-          <span id="ios-link" style="display:none;">
-            <a href="https://apps.apple.com/app/id6739300717" target="_blank">تحميل للآيفون</a>
-          </span>
-        </p>
-      </div>
-      <div class="dev-link">
-        مطور بواسطة <a href="https://www.nitcotek.com/" target="_blank">نتكو</a>
-      </div>
+<head>
+  <meta charset="UTF-8">
+  <title>جاري فتح تطبيق مزن</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      background: #f7fafd;
+      color: #222;
+      font-family: 'Cairo', Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: #fff;
+      padding: 2.5em 2em;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px 0 rgba(20,140,177,0.07);
+      border: 2px solid #148CB1;
+      text-align: center;
+    }
+    .logo {
+      font-size: 2.4em;
+      color: #148CB1;
+      margin-bottom: 0.4em;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .loading-text {
+      font-size: 1.6em;
+      color: #148CB1;
+      margin-top: 0.5em;
+      margin-bottom: 1.3em;
+      font-weight: 600;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    .spinner {
+      margin: 1em auto 0.8em auto;
+      width: 48px;
+      height: 48px;
+      border: 6px solid #e0f4fa;
+      border-top: 6px solid #148CB1;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg);}
+      100% {transform: rotate(360deg);}
+    }
+    .store-links {
+      margin-top: 2em;
+      display: none;
+      flex-direction: column;
+      gap: 1em;
+      font-size: 1.15em;
+    }
+    .store-links a {
+      color: #fff;
+      background: #148CB1;
+      padding: 0.75em 2em;
+      border-radius: 24px;
+      text-decoration: none;
+      font-weight: bold;
+      display: inline-block;
+      transition: background 0.2s;
+    }
+    .store-links a:hover {
+      background: #117295;
+    }
+    .dev-link {
+      margin-top: 2.6em;
+      font-size: 1em;
+      color: #148CB1;
+    }
+    .dev-link a {
+      color: #148CB1;
+      text-decoration: underline;
+    }
+    .note {
+      color: #e03c3c;
+      font-size: 1.13em;
+      margin-bottom: 0.6em;
+      font-weight: 600;
+    }
+  </style>
+  <script>
+    window.onload = function () {
+      const doctorCode = window.location.pathname.split("/").pop();
+      window.location = `mzn://doctor/${doctorCode}`;
+      setTimeout(function () {
+        document.querySelector('.store-links').style.display = 'flex';
+      }, 1500);
+    };
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">مزن</div>
+    <div class="loading-text">
+      جاري فتح تطبيق مزن
+      <span class="spinner"></span>
     </div>
-    <script>
-      // Show only relevant store link
-      function showStoreLinks() {
-        if (/android/i.test(navigator.userAgent)) {
-          document.getElementById('android-link').style.display = 'inline';
-        } else if (/iphone|ipad/i.test(navigator.userAgent)) {
-          document.getElementById('ios-link').style.display = 'inline';
-        } else {
-          document.getElementById('android-link').style.display = 'inline';
-          document.getElementById('ios-link').style.display = 'inline';
-        }
-      }
-      showStoreLinks();
-    </script>
-  </body>
+    <div class="store-links">
+      <div class="note">إذا لم يتم فتح التطبيق، يرجى تحميله أولاً:</div>
+      <a href="https://play.google.com/store/apps/details?id=com.mzn.patients" target="_blank">تحميل التطبيق من Google Play</a>
+      <a href="https://apps.apple.com/app/id6739300717" target="_blank">تحميل التطبيق من App Store</a>
+    </div>
+    <div class="dev-link">
+      مطور بواسطة <a href="https://www.nitcotek.com/" target="_blank">نتكو</a>
+    </div>
+  </div>
+</body>
 </html>
