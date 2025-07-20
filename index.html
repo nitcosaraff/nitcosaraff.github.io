@@ -9,11 +9,11 @@
       background: #f7fafd;
       color: #222;
       font-family: 'Cairo', Arial, sans-serif;
+      min-height: 100vh;
+      margin: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 100vh;
-      margin: 0;
     }
     .container {
       background: #fff;
@@ -22,28 +22,37 @@
       box-shadow: 0 4px 24px 0 rgba(20,140,177,0.07);
       border: 2px solid #148CB1;
       text-align: center;
+      max-width: 340px;
+      width: 100%;
+      transition: box-shadow 0.25s;
+    }
+    .container:active, .container:focus-within {
+      box-shadow: 0 8px 32px 0 rgba(20,140,177,0.14);
     }
     .logo {
       font-size: 2.4em;
       color: #148CB1;
-      margin-bottom: 0.4em;
+      margin-bottom: 0.2em;
       font-weight: bold;
       letter-spacing: 1px;
+      user-select: none;
     }
     .loading-text {
-      font-size: 1.6em;
+      font-size: 1.15em;
       color: #148CB1;
-      margin-top: 0.5em;
-      margin-bottom: 1.3em;
+      margin-top: 0.2em;
+      margin-bottom: 1.1em;
       font-weight: 600;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-direction: column;
+      min-height: 48px;
+      user-select: none;
     }
     .spinner {
-      margin: 1em auto 0.8em auto;
+      margin: 1em auto 0.7em auto;
       width: 48px;
       height: 48px;
       border: 6px solid #e0f4fa;
@@ -56,67 +65,72 @@
       0% { transform: rotate(0deg);}
       100% {transform: rotate(360deg);}
     }
-    .store-links {
-      margin-top: 2em;
-      display: none;
-      flex-direction: column;
-      gap: 1em;
-      font-size: 1.15em;
-    }
-    .store-links a {
-      color: #fff;
-      background: #148CB1;
-      padding: 0.75em 2em;
-      border-radius: 24px;
-      text-decoration: none;
-      font-weight: bold;
-      display: inline-block;
-      transition: background 0.2s;
-    }
-    .store-links a:hover {
-      background: #117295;
-    }
     .dev-link {
-      margin-top: 2.6em;
-      font-size: 1em;
+      margin-top: 2.2em;
+      font-size: 0.98em;
       color: #148CB1;
+      letter-spacing: 0.2px;
     }
     .dev-link a {
       color: #148CB1;
       text-decoration: underline;
+      transition: color 0.15s;
     }
-    .note {
+    .dev-link a:hover {
+      color: #0e5c7d;
+    }
+    .info {
       color: #e03c3c;
-      font-size: 1.13em;
-      margin-bottom: 0.6em;
+      font-size: 1.12em;
+      margin: 0.7em 0 0.6em 0;
       font-weight: 600;
+      letter-spacing: 0.2px;
+      display: none;
+      animation: fadein 0.5s;
+    }
+    @keyframes fadein {
+      from {opacity: 0;}
+      to {opacity: 1;}
     }
   </style>
+</head>
+<body>
+  <div class="container" id="box">
+    <div class="logo">مزن</div>
+    <div class="loading-text" id="loading-text">
+      جاري فتح تطبيق مزن
+      <span class="spinner" id="spinner"></span>
+    </div>
+    <div class="info" id="info-text">
+      يبدو أن تطبيق مزن غير مثبت على جهازك.<br>
+      سيتم تحويلك لتحميل التطبيق.
+    </div>
+    <div class="dev-link">
+      مطور بواسطة <a href="https://www.nitcotek.com/" target="_blank" rel="noopener">نتكو</a>
+    </div>
+  </div>
   <script>
     window.onload = function () {
       const doctorCode = window.location.pathname.split("/").pop();
+      // محاولة فتح التطبيق
       window.location = `mzn://doctor/${doctorCode}`;
       setTimeout(function () {
-        document.querySelector('.store-links').style.display = 'flex';
+        // إظهار رسالة عدم وجود التطبيق
+        document.getElementById('loading-text').style.display = 'none';
+        document.getElementById('info-text').style.display = 'block';
+        // إعادة التوجيه للمتجر بعد نصف ثانية
+        setTimeout(function () {
+          var userAgent = navigator.userAgent || navigator.vendor || window.opera;
+          if (/android/i.test(userAgent)) {
+            window.location = "https://play.google.com/store/apps/details?id=com.mzn.patients";
+          } else if (/iPad|iPhone|iPod/.test(userAgent)) {
+            window.location = "https://apps.apple.com/app/id6739300717";
+          } else {
+            window.location = "https://play.google.com/store/apps/details?id=com.mzn.patients";
+          }
+        }, 500);
       }, 1500);
     };
   </script>
-</head>
-<body>
-  <div class="container">
-    <div class="logo">مزن</div>
-    <div class="loading-text">
-      جاري فتح تطبيق مزن
-      <span class="spinner"></span>
-    </div>
-    <div class="store-links">
-      <div class="note">إذا لم يتم فتح التطبيق، يرجى تحميله أولاً:</div>
-      <a href="https://play.google.com/store/apps/details?id=com.mzn.patients" target="_blank">تحميل التطبيق من Google Play</a>
-      <a href="https://apps.apple.com/app/id6739300717" target="_blank">تحميل التطبيق من App Store</a>
-    </div>
-    <div class="dev-link">
-      مطور بواسطة <a href="https://www.nitcotek.com/" target="_blank">نتكو</a>
-    </div>
-  </div>
 </body>
 </html>
