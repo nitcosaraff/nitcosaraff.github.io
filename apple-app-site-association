@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "SE4RYAFP84.com.mzn.patients",
+        "paths": [ "/*" ]
+      }
+    ]
+  }
+}
