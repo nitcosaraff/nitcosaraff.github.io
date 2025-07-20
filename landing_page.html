@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>فتح الدكتور</title>
+    <script>
+      function openApp() {
+        const doctorCode = window.location.pathname.split("/").pop();
+        const deepLink = `mzn://doctor/${doctorCode}`;
+        window.location = deepLink;
+
+        setTimeout(function () {
+          if (/android/i.test(navigator.userAgent)) {
+            window.location = 'https://play.google.com/store/apps/details?id=com.mzn.patients';
+          } else if (/iphone|ipad/i.test(navigator.userAgent)) {
+            window.location = 'https://apps.apple.com/app/id6739300717';
+          }
+        }, 2000);
+      }
+    </script>
+  </head>
+  <body onload="openApp()">
+    <p>جاري الفتح...</p>
+  </body>
+</html>
