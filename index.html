@@ -1,184 +1,376 @@
-import React, { useState, useEffect } from 'react';
-import { Trash2, Plus, RefreshCw } from 'lucide-react';
-
-export default function DoctorsManagement() {
-  const [doctors, setDoctors] = useState([]);
-  const [newCode, setNewCode] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-
-  // تحميل البيانات
-  useEffect(() => {
-    loadDoctors();
-  }, []);
-
-  const loadDoctors = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('https://raw.githubusercontent.com/nitcosaraff/nitcosaraff.github.io/main/doctors.json?' + Date.now());
-      const data = await res.json();
-      setDoctors(data.doctors || []);
-    } catch (error) {
-      showMessage('❌ خطأ في تحميل البيانات', 'error');
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إدارة أكواد الأطباء</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-    setLoading(false);
-  };
-
-  const showMessage = (msg, type = 'success') => {
-    setMessage(msg);
-    setTimeout(() => setMessage(''), 3000);
-  };
-
-  const addDoctor = async () => {
-    const code = newCode.trim();
-    if (!code) {
-      showMessage('⚠️ من فضلك أدخل كود الطبيب', 'error');
-      return;
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
     }
-    if (doctors.includes(code)) {
-      showMessage('⚠️ الكود موجود بالفعل', 'error');
-      return;
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      padding: 40px;
     }
-
-    setLoading(true);
-    try {
-      const response = await fetch('/.netlify/functions/update-doctors', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'add',
-          code: code
-        })
-      });
-
-      if (response.ok) {
-        setDoctors([...doctors, code]);
-        setNewCode('');
-        showMessage('✅ تم إضافة الكود بنجاح');
-      } else {
-        showMessage('❌ حدث خطأ في الإضافة', 'error');
-      }
-    } catch (error) {
-      showMessage('❌ خطأ في الاتصال', 'error');
+    
+    h1 {
+      text-align: center;
+      color: #667eea;
+      font-size: 2.5em;
+      margin-bottom: 30px;
     }
-    setLoading(false);
-  };
-
-  const deleteDoctor = async (code) => {
-    if (!confirm(`هل تريد حذف الكود: ${code}؟`)) return;
-
-    setLoading(true);
-    try {
-      const response = await fetch('/.netlify/functions/update-doctors', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'delete',
-          code: code
-        })
-      });
-
-      if (response.ok) {
-        setDoctors(doctors.filter(c => c !== code));
-        showMessage('✅ تم حذف الكود بنجاح');
-      } else {
-        showMessage('❌ حدث خطأ في الحذف', 'error');
-      }
-    } catch (error) {
-      showMessage('❌ خطأ في الاتصال', 'error');
+    
+    .message {
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 20px;
+      display: none;
     }
-    setLoading(false);
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8" dir="rtl">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <h1 className="text-4xl font-bold text-center text-indigo-900 mb-8">
-            🏥 إدارة أكواد الأطباء
-          </h1>
-
-          {/* رسالة التنبيه */}
-          {message && (
-            <div className={`mb-6 p-4 rounded-lg text-center font-semibold ${
-              message.includes('❌') || message.includes('⚠️') 
-                ? 'bg-red-100 text-red-800' 
-                : 'bg-green-100 text-green-800'
-            }`}>
-              {message}
-            </div>
-          )}
-
-          {/* إضافة كود جديد */}
-          <div className="flex gap-3 mb-8">
-            <input
-              type="text"
-              value={newCode}
-              onChange={(e) => setNewCode(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && addDoctor()}
-              placeholder="أدخل كود الطبيب"
-              className="flex-1 px-4 py-3 border-2 border-indigo-300 rounded-lg focus:outline-none focus:border-indigo-500 text-lg"
-              disabled={loading}
-            />
-            <button
-              onClick={addDoctor}
-              disabled={loading}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              <Plus size={20} />
-              إضافة
-            </button>
-            <button
-              onClick={loadDoctors}
-              disabled={loading}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg disabled:opacity-50 transition-all"
-            >
-              <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
-            </button>
-          </div>
-
-          {/* الجدول */}
-          <div className="overflow-hidden rounded-lg border-2 border-indigo-200">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-indigo-600 text-white">
-                  <th className="py-4 px-6 text-xl font-bold">الكود</th>
-                  <th className="py-4 px-6 text-xl font-bold w-32">الإجراء</th>
-                </tr>
-              </thead>
-              <tbody>
-                {doctors.length === 0 ? (
-                  <tr>
-                    <td colSpan="2" className="py-12 text-center text-gray-500 text-lg">
-                      {loading ? 'جاري التحميل...' : 'لا توجد أكواد حالياً'}
-                    </td>
-                  </tr>
-                ) : (
-                  doctors.map((code, index) => (
-                    <tr key={index} className="border-b border-indigo-100 hover:bg-indigo-50 transition-colors">
-                      <td className="py-4 px-6 text-lg font-semibold text-gray-800">{code}</td>
-                      <td className="py-4 px-6 text-center">
-                        <button
-                          onClick={() => deleteDoctor(code)}
-                          disabled={loading}
-                          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 mx-auto disabled:opacity-50 transition-all"
-                        >
-                          <Trash2 size={18} />
-                          حذف
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="mt-6 text-center text-gray-600">
-            <p>عدد الأطباء: <strong className="text-indigo-600 text-xl">{doctors.length}</strong></p>
-          </div>
-        </div>
-      </div>
+    
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 2px solid #c3e6cb;
+    }
+    
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 2px solid #f5c6cb;
+    }
+    
+    .input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+    
+    input {
+      flex: 1;
+      padding: 15px;
+      font-size: 18px;
+      border: 2px solid #667eea;
+      border-radius: 10px;
+      outline: none;
+      transition: all 0.3s;
+    }
+    
+    input:focus {
+      border-color: #764ba2;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    button {
+      padding: 15px 30px;
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .btn-add {
+      background: #667eea;
+      color: white;
+    }
+    
+    .btn-add:hover:not(:disabled) {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-refresh {
+      background: #6c757d;
+      color: white;
+      padding: 15px;
+    }
+    
+    .btn-refresh:hover:not(:disabled) {
+      background: #5a6268;
+    }
+    
+    .btn-delete {
+      background: #dc3545;
+      color: white;
+      padding: 8px 16px;
+      font-size: 14px;
+    }
+    
+    .btn-delete:hover:not(:disabled) {
+      background: #c82333;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+    
+    thead {
+      background: #667eea;
+      color: white;
+    }
+    
+    th {
+      padding: 20px;
+      font-size: 20px;
+      text-align: center;
+    }
+    
+    tbody tr {
+      border-bottom: 1px solid #e9ecef;
+      transition: all 0.3s;
+    }
+    
+    tbody tr:hover {
+      background: #f8f9fa;
+    }
+    
+    td {
+      padding: 20px;
+      font-size: 18px;
+      text-align: center;
+    }
+    
+    .empty {
+      padding: 60px;
+      text-align: center;
+      color: #6c757d;
+      font-size: 20px;
+    }
+    
+    .stats {
+      text-align: center;
+      font-size: 18px;
+      color: #6c757d;
+      margin-top: 20px;
+    }
+    
+    .stats strong {
+      color: #667eea;
+      font-size: 24px;
+    }
+    
+    .spinner {
+      display: inline-block;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏥 إدارة أكواد الأطباء</h1>
+    
+    <div id="message" class="message"></div>
+    
+    <div class="input-group">
+      <input 
+        type="text" 
+        id="doctorCode" 
+        placeholder="أدخل كود الطبيب"
+        onkeypress="if(event.key==='Enter') addDoctor()"
+      >
+      <button class="btn-add" onclick="addDoctor()">
+        ➕ إضافة
+      </button>
+      <button class="btn-refresh" onclick="loadDoctors()" id="refreshBtn">
+        🔄
+      </button>
     </div>
-  );
-}
+    
+    <table>
+      <thead>
+        <tr>
+          <th>الكود</th>
+          <th style="width: 150px;">الإجراء</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr>
+          <td colspan="2" class="empty">جاري التحميل...</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div class="stats">
+      عدد الأطباء: <strong id="count">0</strong>
+    </div>
+  </div>
+
+  <script>
+    const owner = 'nitcosaraff';
+    const repo = 'nitcosaraff.github.io';
+    let doctors = [];
+    let loading = false;
+
+    // تحميل البيانات عند فتح الصفحة
+    loadDoctors();
+
+    async function loadDoctors() {
+      if (loading) return;
+      loading = true;
+      updateRefreshButton();
+      
+      try {
+        const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/doctors.json?t=${Date.now()}`);
+        const data = await res.json();
+        doctors = data.doctors || [];
+        renderTable();
+      } catch (error) {
+        showMessage('❌ خطأ في تحميل البيانات', 'error');
+      }
+      
+      loading = false;
+      updateRefreshButton();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      const count = document.getElementById('count');
+      
+      count.textContent = doctors.length;
+      
+      if (doctors.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="2" class="empty">لا توجد أكواد حالياً</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = doctors.map(code => `
+        <tr>
+          <td><strong>${code}</strong></td>
+          <td>
+            <button class="btn-delete" onclick="deleteDoctor('${code}')">
+              ❌ حذف
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function addDoctor() {
+      if (loading) return;
+      
+      const input = document.getElementById('doctorCode');
+      const code = input.value.trim();
+      
+      if (!code) {
+        showMessage('⚠️ من فضلك أدخل كود الطبيب', 'error');
+        return;
+      }
+      
+      if (doctors.includes(code)) {
+        showMessage('⚠️ الكود موجود بالفعل', 'error');
+        return;
+      }
+      
+      loading = true;
+      
+      try {
+        const response = await fetch('/.netlify/functions/update-doctors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'add', code: code })
+        });
+        
+        if (response.ok) {
+          doctors.push(code);
+          renderTable();
+          input.value = '';
+          showMessage('✅ تم إضافة الكود بنجاح', 'success');
+        } else {
+          const error = await response.json();
+          showMessage('❌ حدث خطأ: ' + (error.error || 'خطأ غير معروف'), 'error');
+        }
+      } catch (error) {
+        showMessage('❌ خطأ في الاتصال بالخادم', 'error');
+      }
+      
+      loading = false;
+    }
+
+    async function deleteDoctor(code) {
+      if (loading) return;
+      
+      if (!confirm(`هل تريد حذف الكود: ${code}؟`)) return;
+      
+      loading = true;
+      
+      try {
+        const response = await fetch('/.netlify/functions/update-doctors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', code: code })
+        });
+        
+        if (response.ok) {
+          doctors = doctors.filter(c => c !== code);
+          renderTable();
+          showMessage('✅ تم حذف الكود بنجاح', 'success');
+        } else {
+          const error = await response.json();
+          showMessage('❌ حدث خطأ: ' + (error.error || 'خطأ غير معروف'), 'error');
+        }
+      } catch (error) {
+        showMessage('❌ خطأ في الاتصال بالخادم', 'error');
+      }
+      
+      loading = false;
+    }
+
+    function showMessage(msg, type) {
+      const messageDiv = document.getElementById('message');
+      messageDiv.textContent = msg;
+      messageDiv.className = `message ${type}`;
+      messageDiv.style.display = 'block';
+      
+      setTimeout(() => {
+        messageDiv.style.display = 'none';
+      }, 3000);
+    }
+
+    function updateRefreshButton() {
+      const btn = document.getElementById('refreshBtn');
+      if (loading) {
+        btn.innerHTML = '<span class="spinner">🔄</span>';
+        btn.disabled = true;
+      } else {
+        btn.innerHTML = '🔄';
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
