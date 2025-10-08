@@ -1,162 +1,91 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
-  <meta charset="UTF-8">
-  <title>جاري فتح تطبيق مزن</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <title>إدارة أكواد الأطباء</title>
   <style>
-    :root {
-      --primary: #148CB1;
-      --primary-dark: #0e5c7d;
-      --error: #e03c3c;
-      --bg: #f7fafd;
-      --card-bg: #fff;
-      --shadow: 0 4px 32px 0 rgba(20,140,177,0.13);
-      --radius: 20px;
-    }
-    body {
-      background: var(--bg);
-      color: #222;
-      font-family: 'Cairo', Arial, sans-serif;
-      min-height: 100vh;
-      margin: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.3s;
-    }
-    .container {
-      background: var(--card-bg);
-      padding: 2.7em 2.1em 2.1em 2.1em;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      border: 2px solid var(--primary);
-      text-align: center;
-      max-width: 370px;
-      width: 100%;
-      position: relative;
-      overflow: hidden;
-      animation: fadein 0.7s;
-    }
-    @keyframes fadein {
-      from { opacity: 0; transform: translateY(40px);}
-      to { opacity: 1; transform: translateY(0);}
-    }
-    .logo {
-      font-size: 2.6em;
-      color: var(--primary);
-      margin-bottom: 0.1em;
-      margin-top: 0.2em;
-      font-weight: bold;
-      letter-spacing: 1.5px;
-      user-select: none;
-      transition: color 0.2s;
-    }
-    .loading-text {
-      font-size: 1.22em;
-      color: var(--primary);
-      margin-top: 0.25em;
-      margin-bottom: 1.13em;
-      font-weight: 700;
-      letter-spacing: 0.4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      min-height: 48px;
-      user-select: none;
-    }
-    .spinner {
-      margin: 1em auto 0.7em auto;
-      width: 48px;
-      height: 48px;
-      border: 6px solid #e0f4fa;
-      border-top: 6px solid var(--primary);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      display: inline-block;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg);}
-      100% {transform: rotate(360deg);}
-    }
-    .info {
-      color: var(--error);
-      font-size: 1.11em;
-      margin: 0.7em 0 0.6em 0;
-      font-weight: 700;
-      letter-spacing: 0.2px;
-      display: none;
-      animation: fadein 0.6s;
-    }
-    @keyframes fadein {
-      from {opacity: 0;}
-      to {opacity: 1;}
-    }
-    .dev-link {
-      margin-top: 2.1em;
-      font-size: 0.97em;
-      color: var(--primary);
-      letter-spacing: 0.2px;
-      opacity: 0.95;
-    }
-    .dev-link a {
-      color: var(--primary);
-      text-decoration: underline;
-      transition: color 0.15s;
-    }
-    .dev-link a:hover {
-      color: var(--primary-dark);
-    }
-    @media (max-width: 480px) {
-      .container {
-        max-width: 97vw;
-        padding: 1.5em 0.7em 1.1em 0.7em;
-      }
-      .logo { font-size: 2.1em;}
-      .spinner { width: 36px; height: 36px; border-width: 5px;}
-      .loading-text { font-size: 1em;}
-    }
+    body { font-family: sans-serif; direction: rtl; text-align: center; margin: 40px; }
+    input, button { padding: 8px; margin: 5px; font-size: 16px; }
+    table { margin: 20px auto; border-collapse: collapse; width: 50%; }
+    th, td { border: 1px solid #ccc; padding: 8px; }
+    th { background: #f5f5f5; }
   </style>
 </head>
 <body>
-  <div class="container" id="box">
-    <div class="logo">مزن</div>
-    <div class="loading-text" id="loading-text">
-      جاري فتح تطبيق مزن
-      <span class="spinner" id="spinner"></span>
-    </div>
-    <div class="info" id="info-text">
-      يبدو أن تطبيق مزن غير مثبت على جهازك.<br>
-      سيتم تحويلك لتحميل التطبيق.
-    </div>
-    <div class="dev-link">
-      مطور بواسطة <a href="https://www.nitcotek.com/" target="_blank" rel="noopener">نتكو</a>
-    </div>
-  </div>
+  <h1>إدارة أكواد الأطباء</h1>
+
+  <input id="doctorCode" type="text" placeholder="أدخل كود الطبيب">
+  <button onclick="addDoctor()">➕ إضافة</button>
+
+  <table>
+    <thead>
+      <tr><th>الكود</th><th>حذف</th></tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
   <script>
-    window.onload = function () {
-      const doctorCode = window.location.pathname.split("/").pop();
-      // محاولة فتح التطبيق
-      window.location = `mzn://doctor/${doctorCode}`;
-      setTimeout(function () {
-        // إظهار رسالة عدم وجود التطبيق
-        document.getElementById('loading-text').style.display = 'none';
-        document.getElementById('info-text').style.display = 'block';
-        // إعادة التوجيه للمتجر بعد نصف ثانية
-        setTimeout(function () {
-          var userAgent = navigator.userAgent || navigator.vendor || window.opera;
-          if (/android/i.test(userAgent)) {
-            window.location = "https://play.google.com/store/apps/details?id=com.mzn.patients";
-          } else if (/iPad|iPhone|iPod/.test(userAgent)) {
-            window.location = "https://apps.apple.com/app/id6739300717";
-          } else {
-            window.location = "https://play.google.com/store/apps/details?id=com.mzn.patients";
-          }
-        }, 500);
-      }, 1500);
-    };
+    const owner = "USERNAME"; // 👈 ضع هنا اسم المستخدم في GitHub
+    const repo = "REPO_NAME"; // 👈 ضع هنا اسم الريبو
+    const path = "doctors.json";
+    const token = "YOUR_GITHUB_TOKEN"; // 👈 ضع هنا التوكن (مؤقتًا للتجربة)
+
+    async function getFile() {
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`);
+      const data = await res.json();
+      const content = atob(data.content);
+      return { content: JSON.parse(content), sha: data.sha };
+    }
+
+    async function updateFile(newContent, sha) {
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `token ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: "update doctors list",
+          content: btoa(JSON.stringify(newContent, null, 2)),
+          sha: sha
+        })
+      });
+      return await res.json();
+    }
+
+    async function loadDoctors() {
+      const { content } = await getFile();
+      const table = document.getElementById("tableBody");
+      table.innerHTML = "";
+      content.doctors.forEach(code => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${code}</td><td><button onclick="deleteDoctor('${code}')">❌ حذف</button></td>`;
+        table.appendChild(tr);
+      });
+    }
+
+    async function addDoctor() {
+      const input = document.getElementById("doctorCode");
+      const code = input.value.trim();
+      if (!code) return alert("من فضلك أدخل كود الطبيب");
+      const { content, sha } = await getFile();
+      if (content.doctors.includes(code)) return alert("الكود موجود بالفعل");
+      content.doctors.push(code);
+      await updateFile(content, sha);
+      input.value = "";
+      alert("✅ تم إضافة الكود بنجاح");
+      loadDoctors();
+    }
+
+    async function deleteDoctor(code) {
+      const { content, sha } = await getFile();
+      content.doctors = content.doctors.filter(c => c !== code);
+      await updateFile(content, sha);
+      alert("❌ تم حذف الكود");
+      loadDoctors();
+    }
+
+    loadDoctors();
   </script>
 </body>
 </html>
