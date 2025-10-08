@@ -1,0 +1,24 @@
+name: Update Doctors List
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [update_doctors]
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Update doctors.json
+        run: |
+          echo "${{ github.event.client_payload.data }}" > doctors.json
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          git add doctors.json
+          git commit -m "Update doctors list"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
