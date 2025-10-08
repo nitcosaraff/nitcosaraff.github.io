@@ -7,7 +7,6 @@ exports.handler = async () => {
   const token = process.env.GITHUB_TOKEN;
 
   try {
-    // جلب الملف مباشرة من GitHub
     const res = await fetch(
       `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
       {
@@ -25,7 +24,8 @@ exports.handler = async () => {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache'
+        'Cache-Control': 'no-cache', // ⭐ مهم جداً
+        'Access-Control-Allow-Origin': '*' // ⭐ للسماح بـ CORS
       },
       body: JSON.stringify(content)
     };
