@@ -1,7 +1,6 @@
 name: Update Doctors List
 
 on:
-  workflow_dispatch:
   repository_dispatch:
     types: [update_doctors]
 
@@ -14,7 +13,8 @@ jobs:
 
       - name: Update doctors.json
         run: |
-          echo "${{ github.event.client_payload.data }}" > doctors.json
+          echo '${{ toJson(github.event.client_payload.doctors) }}' > temp.json
+          jq -n --argjson doctors "$(cat temp.json)" '{ doctors: $doctors }' > doctors.json
           git config user.name "GitHub Action"
           git config user.email "action@github.com"
           git add doctors.json
