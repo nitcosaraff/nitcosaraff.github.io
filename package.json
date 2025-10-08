@@ -1,8 +1,0 @@
-{
-  "name": "doctors-management",
-  "version": "1.0.0",
-  "description": "نظام إدارة أكواد الأطباء",
-  "dependencies": {
-    "node-fetch": "^2.7.0"
-  }
-}
