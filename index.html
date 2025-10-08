@@ -1,122 +1,184 @@
-<!DOCTYPE html>
-<html lang="ar">
-<head>
-  <meta charset="UTF-8" />
-  <title>إدارة أكواد الأطباء</title>
-  <style>
-    /* ... (CSS لم يتغير) */
-  </style>
-</head>
-<body>
-  <h1>إدارة أكواد الأطباء</h1>
-  <input id="doctorCode" type="text" placeholder="أدخل كود الطبيب">
-  <button onclick="addDoctor()">➕ إضافة</button>
-  <table>
-    <thead>
-      <tr><th>الكود</th><th>حذف</th></tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
-  <script>
-    const owner = "nitcosaraff";
-    const repo = "nitcosaraff.github.io";
-    const path = "doctors.json";
-    // *** تنبيه: هذا التوكن يجب أن يكون مخصصًا وصلاحيته "workflow" فقط. ***
-    // *** ويجب أن تكون حذرًا جدًا من وضعه في الـ Frontend لأنه مرئي للجميع! ***
-    // *** يفضل استخدام خادم وسيط (Proxy) إن أمكن لجعله مخفيًا. ***
-    const GITHUB_DISPATCH_TOKEN = "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"; 
-    
-    async function loadDoctors() {
-      // إضافة متغير عشوائي لتجاوز الكاش (Cache Busting)
-      const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/${path}?t=${Date.now()}`);
-      if (!res.ok) {
-          console.error("Failed to load doctors.json");
-          return;
-      }
-      const data = await res.json();
-      const table = document.getElementById("tableBody");
-      table.innerHTML = "";
-      data.doctors.forEach(code => {
-        const tr = document.createElement("tr");
-        // استخدام 'textContent' للعرض الآمن، و 'innerHTML' للعناصر
-        const codeCell = document.createElement('td');
-        codeCell.textContent = code;
-        const buttonCell = document.createElement('td');
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = "❌ حذف";
-        deleteButton.onclick = () => deleteDoctor(code);
-        buttonCell.appendChild(deleteButton);
+import React, { useState, useEffect } from 'react';
+import { Trash2, Plus, RefreshCw } from 'lucide-react';
 
-        tr.appendChild(codeCell);
-        tr.appendChild(buttonCell);
-        table.appendChild(tr);
-      });
-    }
-    
-    async function triggerUpdate(newDoctors) {
-      if (GITHUB_DISPATCH_TOKEN === "ضع_التوكن_هنا_بصلاحية_workflow_فقط" || !GITHUB_DISPATCH_TOKEN) {
-          alert("خطأ: لم يتم وضع التوكن الخاص بـ repository_dispatch.");
-          return;
-      }
-      
-      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/dispatches`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${GITHUB_DISPATCH_TOKEN}`,
-          "Accept": "application/vnd.github+json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          event_type: "update_doctors",
-          client_payload: { doctors: newDoctors }, // تمرير مصفوفة الأكواد
-        }),
-      });
-      
-      if (response.status !== 204) { // 204 No Content هو الرد المتوقع لـ Dispatch ناجح
-          alert(`فشل إرسال طلب التحديث! الحالة: ${response.status}`);
-          console.error('GitHub API Response:', await response.text());
-          return false;
-      }
-      return true;
-    }
-    
-    async function addDoctor() {
-      const input = document.getElementById("doctorCode");
-      const code = input.value.trim();
-      if (!code) return alert("من فضلك أدخل كود الطبيب");
-      
-      const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/${path}?t=${Date.now()}`);
-      const data = await res.json();
-      
-      if (data.doctors.includes(code)) return alert("الكود موجود بالفعل");
-      
-      data.doctors.push(code);
-      
-      if (await triggerUpdate(data.doctors)) {
-        alert("✅ تم إرسال طلب تحديث القائمة! قد يستغرق الأمر بعض الوقت.");
-        input.value = "";
-        setTimeout(loadDoctors, 8000); // ننتظر 8 ثواني
-      }
-    }
-    
-    async function deleteDoctor(code) {
-      if (!confirm(`هل أنت متأكد من حذف الكود: ${code}؟`)) return;
+export default function DoctorsManagement() {
+  const [doctors, setDoctors] = useState([]);
+  const [newCode, setNewCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
 
-      const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/${path}?t=${Date.now()}`);
-      const data = await res.json();
-      
-      const initialLength = data.doctors.length;
-      data.doctors = data.doctors.filter(c => c !== code);
-      
-      if (data.doctors.length === initialLength) return alert("الكود غير موجود ليتم حذفه.");
-      
-      if (await triggerUpdate(data.doctors)) {
-        alert("❌ تم إرسال طلب حذف الكود! قد يستغرق الأمر بعض الوقت.");
-        setTimeout(loadDoctors, 8000);
-      }
-    }
-    
+  // تحميل البيانات
+  useEffect(() => {
     loadDoctors();
-  </script>
-</body>
-</html>
+  }, []);
+
+  const loadDoctors = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('https://raw.githubusercontent.com/nitcosaraff/nitcosaraff.github.io/main/doctors.json?' + Date.now());
+      const data = await res.json();
+      setDoctors(data.doctors || []);
+    } catch (error) {
+      showMessage('❌ خطأ في تحميل البيانات', 'error');
+    }
+    setLoading(false);
+  };
+
+  const showMessage = (msg, type = 'success') => {
+    setMessage(msg);
+    setTimeout(() => setMessage(''), 3000);
+  };
+
+  const addDoctor = async () => {
+    const code = newCode.trim();
+    if (!code) {
+      showMessage('⚠️ من فضلك أدخل كود الطبيب', 'error');
+      return;
+    }
+    if (doctors.includes(code)) {
+      showMessage('⚠️ الكود موجود بالفعل', 'error');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/.netlify/functions/update-doctors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'add',
+          code: code
+        })
+      });
+
+      if (response.ok) {
+        setDoctors([...doctors, code]);
+        setNewCode('');
+        showMessage('✅ تم إضافة الكود بنجاح');
+      } else {
+        showMessage('❌ حدث خطأ في الإضافة', 'error');
+      }
+    } catch (error) {
+      showMessage('❌ خطأ في الاتصال', 'error');
+    }
+    setLoading(false);
+  };
+
+  const deleteDoctor = async (code) => {
+    if (!confirm(`هل تريد حذف الكود: ${code}؟`)) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch('/.netlify/functions/update-doctors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'delete',
+          code: code
+        })
+      });
+
+      if (response.ok) {
+        setDoctors(doctors.filter(c => c !== code));
+        showMessage('✅ تم حذف الكود بنجاح');
+      } else {
+        showMessage('❌ حدث خطأ في الحذف', 'error');
+      }
+    } catch (error) {
+      showMessage('❌ خطأ في الاتصال', 'error');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8" dir="rtl">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <h1 className="text-4xl font-bold text-center text-indigo-900 mb-8">
+            🏥 إدارة أكواد الأطباء
+          </h1>
+
+          {/* رسالة التنبيه */}
+          {message && (
+            <div className={`mb-6 p-4 rounded-lg text-center font-semibold ${
+              message.includes('❌') || message.includes('⚠️') 
+                ? 'bg-red-100 text-red-800' 
+                : 'bg-green-100 text-green-800'
+            }`}>
+              {message}
+            </div>
+          )}
+
+          {/* إضافة كود جديد */}
+          <div className="flex gap-3 mb-8">
+            <input
+              type="text"
+              value={newCode}
+              onChange={(e) => setNewCode(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && addDoctor()}
+              placeholder="أدخل كود الطبيب"
+              className="flex-1 px-4 py-3 border-2 border-indigo-300 rounded-lg focus:outline-none focus:border-indigo-500 text-lg"
+              disabled={loading}
+            />
+            <button
+              onClick={addDoctor}
+              disabled={loading}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              <Plus size={20} />
+              إضافة
+            </button>
+            <button
+              onClick={loadDoctors}
+              disabled={loading}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg disabled:opacity-50 transition-all"
+            >
+              <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
+            </button>
+          </div>
+
+          {/* الجدول */}
+          <div className="overflow-hidden rounded-lg border-2 border-indigo-200">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-indigo-600 text-white">
+                  <th className="py-4 px-6 text-xl font-bold">الكود</th>
+                  <th className="py-4 px-6 text-xl font-bold w-32">الإجراء</th>
+                </tr>
+              </thead>
+              <tbody>
+                {doctors.length === 0 ? (
+                  <tr>
+                    <td colSpan="2" className="py-12 text-center text-gray-500 text-lg">
+                      {loading ? 'جاري التحميل...' : 'لا توجد أكواد حالياً'}
+                    </td>
+                  </tr>
+                ) : (
+                  doctors.map((code, index) => (
+                    <tr key={index} className="border-b border-indigo-100 hover:bg-indigo-50 transition-colors">
+                      <td className="py-4 px-6 text-lg font-semibold text-gray-800">{code}</td>
+                      <td className="py-4 px-6 text-center">
+                        <button
+                          onClick={() => deleteDoctor(code)}
+                          disabled={loading}
+                          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 mx-auto disabled:opacity-50 transition-all"
+                        >
+                          <Trash2 size={18} />
+                          حذف
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-6 text-center text-gray-600">
+            <p>عدد الأطباء: <strong className="text-indigo-600 text-xl">{doctors.length}</strong></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
