@@ -2,61 +2,88 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8" />
-  <title>إدارة قائمة الأطباء</title>
+  <title>إدارة أكواد الأطباء</title>
   <style>
-    body { font-family: sans-serif; direction: rtl; padding: 20px; }
-    input, button { margin: 5px; padding: 8px; }
+    body { font-family: sans-serif; direction: rtl; text-align: center; margin: 40px; }
+    input, button { padding: 8px; margin: 5px; font-size: 16px; }
+    table { margin: 20px auto; border-collapse: collapse; width: 50%; }
+    th, td { border: 1px solid #ccc; padding: 8px; }
+    th { background: #f5f5f5; }
   </style>
 </head>
 <body>
-  <h2>إضافة أو حذف طبيب من القائمة</h2>
-  <input id="doctorName" placeholder="اسم الطبيب" />
+  <h1>إدارة أكواد الأطباء</h1>
+
+  <input id="doctorCode" type="text" placeholder="أدخل كود الطبيب">
   <button onclick="addDoctor()">➕ إضافة</button>
-  <button onclick="removeDoctor()">🗑️ حذف</button>
-  <pre id="status"></pre>
+
+  <table>
+    <thead>
+      <tr><th>الكود</th><th>حذف</th></tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
 
   <script>
-    const repo = "nitcosaraff/nitcosaraff.github.io";
-    const api = `https://api.github.com/repos/${repo}/dispatches`;
+    const owner = "nitcosaraff";
+    const repo = "nitcosaraff.github.io";
+    const path = "doctors.json";
 
-    async function updateDoctors(action, name) {
-      document.getElementById("status").textContent = "⏳ جاري التنفيذ...";
-      try {
-        const res = await fetch(`https://raw.githubusercontent.com/${repo}/main/doctors.json`);
-        const data = await res.json();
-
-        if (action === "add") data.doctors.push(name);
-        else if (action === "remove") data.doctors = data.doctors.filter(d => d !== name);
-
-        await fetch(api, {
-          method: "POST",
-          headers: {
-            "Accept": "application/vnd.github.everest-preview+json",
-            "Authorization": "token GITHUB_TOKEN_PLACEHOLDER", // مش مهم هنا، GitHub Actions بيستخدم التوكن السري
-          },
-          body: JSON.stringify({
-            event_type: "update_doctors",
-            client_payload: { data: JSON.stringify(data, null, 2) }
-          })
-        });
-
-        document.getElementById("status").textContent = "✅ تم تحديث القائمة!";
-      } catch (e) {
-        document.getElementById("status").textContent = "❌ حدث خطأ: " + e.message;
-      }
+    async function loadDoctors() {
+      const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/${path}?t=${Date.now()}`);
+      const data = await res.json();
+      const table = document.getElementById("tableBody");
+      table.innerHTML = "";
+      data.doctors.forEach(code => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${code}</td><td><button onclick="deleteDoctor('${code}')">❌ حذف</button></td>`;
+        table.appendChild(tr);
+      });
     }
 
-    function addDoctor() {
-      const name = document.getElementById("doctorName").value.trim();
-      if (!name) return alert("اكتب اسم الطبيب أولاً");
-      updateDoctors("add", name);
+    async function triggerUpdate(newDoctors) {
+      const token = "YOUR_TOKEN_HERE"; // ضع التوكن هنا مؤقتًا
+      await fetch(`https://api.github.com/repos/${owner}/${repo}/dispatches`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Accept": "application/vnd.github+json",
+        },
+        body: JSON.stringify({
+          event_type: "update_doctors",
+          client_payload: { doctors: newDoctors },
+        }),
+      });
     }
 
-    function removeDoctor() {
-      const name = document.getElementById("doctorName").value.trim();
-      if (!name) return alert("اكتب اسم الطبيب أولاً");
-      updateDoctors("remove", name);
+    async function addDoctor() {
+      const input = document.getElementById("doctorCode");
+      const code = input.value.trim();
+      if (!code) return alert("من فضلك أدخل كود الطبيب");
+
+      const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/${path}?t=${Date.now()}`);
+      const data = await res.json();
+
+      if (data.doctors.includes(code)) return alert("الكود موجود بالفعل");
+
+      data.doctors.push(code);
+      await triggerUpdate(data.doctors);
+      alert("✅ تم تحديث القائمة!");
+      input.value = "";
+      setTimeout(loadDoctors, 5000); // ننتظر ثواني لحد ما GitHub Action يخلص
     }
+
+    async function deleteDoctor(code) {
+      const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/${path}?t=${Date.now()}`);
+      const data = await res.json();
+
+      data.doctors = data.doctors.filter(c => c !== code);
+      await triggerUpdate(data.doctors);
+      alert("❌ تم حذف الكود!");
+      setTimeout(loadDoctors, 5000);
+    }
+
+    loadDoctors();
   </script>
 </body>
 </html>
