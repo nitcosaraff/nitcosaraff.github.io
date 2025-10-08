@@ -245,7 +245,7 @@
       updateRefreshButton();
       
       try {
-        const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/doctors.json?t=${Date.now()}`);
+        const res = await fetch('/.netlify/functions/get-doctors');
         const data = await res.json();
         doctors = data.doctors || [];
         renderTable();
