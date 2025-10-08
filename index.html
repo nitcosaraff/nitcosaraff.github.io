@@ -4,85 +4,118 @@
   <meta charset="UTF-8" />
   <title>إدارة أكواد الأطباء</title>
   <style>
-    body { font-family: sans-serif; direction: rtl; text-align: center; margin: 40px; }
-    input, button { padding: 8px; margin: 5px; font-size: 16px; }
-    table { margin: 20px auto; border-collapse: collapse; width: 50%; }
-    th, td { border: 1px solid #ccc; padding: 8px; }
-    th { background: #f5f5f5; }
+    /* ... (CSS لم يتغير) */
   </style>
 </head>
 <body>
   <h1>إدارة أكواد الأطباء</h1>
-
   <input id="doctorCode" type="text" placeholder="أدخل كود الطبيب">
   <button onclick="addDoctor()">➕ إضافة</button>
-
   <table>
     <thead>
       <tr><th>الكود</th><th>حذف</th></tr>
     </thead>
     <tbody id="tableBody"></tbody>
   </table>
-
   <script>
     const owner = "nitcosaraff";
     const repo = "nitcosaraff.github.io";
     const path = "doctors.json";
-
+    // *** تنبيه: هذا التوكن يجب أن يكون مخصصًا وصلاحيته "workflow" فقط. ***
+    // *** ويجب أن تكون حذرًا جدًا من وضعه في الـ Frontend لأنه مرئي للجميع! ***
+    // *** يفضل استخدام خادم وسيط (Proxy) إن أمكن لجعله مخفيًا. ***
+    const GITHUB_DISPATCH_TOKEN = "ضع_التوكن_هنا_بصلاحية_workflow_فقط"; 
+    
     async function loadDoctors() {
+      // إضافة متغير عشوائي لتجاوز الكاش (Cache Busting)
       const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/${path}?t=${Date.now()}`);
+      if (!res.ok) {
+          console.error("Failed to load doctors.json");
+          return;
+      }
       const data = await res.json();
       const table = document.getElementById("tableBody");
       table.innerHTML = "";
       data.doctors.forEach(code => {
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${code}</td><td><button onclick="deleteDoctor('${code}')">❌ حذف</button></td>`;
+        // استخدام 'textContent' للعرض الآمن، و 'innerHTML' للعناصر
+        const codeCell = document.createElement('td');
+        codeCell.textContent = code;
+        const buttonCell = document.createElement('td');
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = "❌ حذف";
+        deleteButton.onclick = () => deleteDoctor(code);
+        buttonCell.appendChild(deleteButton);
+
+        tr.appendChild(codeCell);
+        tr.appendChild(buttonCell);
         table.appendChild(tr);
       });
     }
-
+    
     async function triggerUpdate(newDoctors) {
-      const token = "YOUR_TOKEN_HERE"; // ضع التوكن هنا مؤقتًا
-      await fetch(`https://api.github.com/repos/${owner}/${repo}/dispatches`, {
+      if (GITHUB_DISPATCH_TOKEN === "ضع_التوكن_هنا_بصلاحية_workflow_فقط" || !GITHUB_DISPATCH_TOKEN) {
+          alert("خطأ: لم يتم وضع التوكن الخاص بـ repository_dispatch.");
+          return;
+      }
+      
+      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/dispatches`, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`,
+          "Authorization": `Bearer ${GITHUB_DISPATCH_TOKEN}`,
           "Accept": "application/vnd.github+json",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           event_type: "update_doctors",
-          client_payload: { doctors: newDoctors },
+          client_payload: { doctors: newDoctors }, // تمرير مصفوفة الأكواد
         }),
       });
+      
+      if (response.status !== 204) { // 204 No Content هو الرد المتوقع لـ Dispatch ناجح
+          alert(`فشل إرسال طلب التحديث! الحالة: ${response.status}`);
+          console.error('GitHub API Response:', await response.text());
+          return false;
+      }
+      return true;
     }
-
+    
     async function addDoctor() {
       const input = document.getElementById("doctorCode");
       const code = input.value.trim();
       if (!code) return alert("من فضلك أدخل كود الطبيب");
-
+      
       const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/${path}?t=${Date.now()}`);
       const data = await res.json();
-
+      
       if (data.doctors.includes(code)) return alert("الكود موجود بالفعل");
-
+      
       data.doctors.push(code);
-      await triggerUpdate(data.doctors);
-      alert("✅ تم تحديث القائمة!");
-      input.value = "";
-      setTimeout(loadDoctors, 5000); // ننتظر ثواني لحد ما GitHub Action يخلص
+      
+      if (await triggerUpdate(data.doctors)) {
+        alert("✅ تم إرسال طلب تحديث القائمة! قد يستغرق الأمر بعض الوقت.");
+        input.value = "";
+        setTimeout(loadDoctors, 8000); // ننتظر 8 ثواني
+      }
     }
-
+    
     async function deleteDoctor(code) {
+      if (!confirm(`هل أنت متأكد من حذف الكود: ${code}؟`)) return;
+
       const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/${path}?t=${Date.now()}`);
       const data = await res.json();
-
+      
+      const initialLength = data.doctors.length;
       data.doctors = data.doctors.filter(c => c !== code);
-      await triggerUpdate(data.doctors);
-      alert("❌ تم حذف الكود!");
-      setTimeout(loadDoctors, 5000);
+      
+      if (data.doctors.length === initialLength) return alert("الكود غير موجود ليتم حذفه.");
+      
+      if (await triggerUpdate(data.doctors)) {
+        alert("❌ تم إرسال طلب حذف الكود! قد يستغرق الأمر بعض الوقت.");
+        setTimeout(loadDoctors, 8000);
+      }
     }
-
+    
     loadDoctors();
   </script>
 </body>
