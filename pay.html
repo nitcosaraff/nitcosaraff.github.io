@@ -2,21 +2,33 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Payment</title>
+  <title>Redirecting to Payment</title>
 </head>
 <body>
-  <h3>جاري تحويلك لبوابة الدفع...</h3>
+  <p>جاري تحويلك إلى بوابة الدفع...</p>
+
+  <form id="pgForm" method="POST">
+    <input type="hidden" name="id">
+    <input type="hidden" name="trandata">
+    <input type="hidden" name="responseURL">
+    <input type="hidden" name="errorURL">
+  </form>
 
   <script>
-    fetch('https://neoleap-payment.<username>.workers.dev/create-payment', {
+    fetch('https://neoleap-payment.nitco-mobile.workers.dev/create-payment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ amount: "10.00" })
     })
-    .then(res => res.json())
+    .then(r => r.json())
     .then(data => {
-      console.log(data);
-      // هنا بعد شوية هنعمل redirect
+      const form = document.getElementById('pgForm');
+      form.action = data.pgUrl;
+      form.id.value = data.id;
+      form.trandata.value = data.trandata;
+      form.responseURL.value = data.responseURL;
+      form.errorURL.value = data.errorURL;
+      form.submit();
     });
   </script>
 </body>
