@@ -9,40 +9,43 @@
 <h3>جاري تحويلك لبوابة الدفع...</h3>
 
 <script>
-fetch("https://neoleap-payment.nitco-mobile.workers.dev/init-payment", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({ amount: "1.00" })
-})
-.then(function (r) {
-  return r.json();
-})
-.then(function (res) {
-  console.log(res);
+(function () {
 
-  if (!res || !res[0] || !res[0].result) {
-    document.body.innerHTML = "فشل بدء عملية الدفع";
-    console.error(res);
-    return;
-  }
+  fetch("https://neoleap-payment.nitco-mobile.workers.dev/init-payment", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ amount: "1.00" })
+  })
+  .then(function (response) {
+    return response.json();
+  })
+  .then(function (res) {
+    console.log(res);
 
-  var result = res[0].result;
-  var firstColonIndex = result.indexOf(":");
+    if (!res || !res[0] || !res[0].result) {
+      document.body.innerHTML = "فشل بدء عملية الدفع";
+      return;
+    }
 
-  var paymentId = result.substring(0, firstColonIndex);
-  var paymentUrl = result.substring(firstColonIndex + 1);
+    var result = res[0].result;
+    var splitIndex = result.indexOf(":");
 
-  console.log("PaymentID:", paymentId);
-  console.log("Redirect URL:", paymentUrl);
+    var paymentId = result.substring(0, splitIndex);
+    var paymentUrl = result.substring(splitIndex + 1);
 
-  window.location.href = paymentUrl;
-})
-.catch(function (err) {
-  console.error(err);
-  document.body.innerHTML = "خطأ غير متوقع";
-});
+    console.log("PaymentID:", paymentId);
+    console.log("URL:", paymentUrl);
+
+    window.location.href = paymentUrl;
+  })
+  .catch(function (err) {
+    console.error(err);
+    document.body.innerHTML = "خطأ غير متوقع";
+  });
+
+})();
 </script>
 
 </body>
