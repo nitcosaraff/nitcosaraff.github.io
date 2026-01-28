@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>Redirecting to Payment</title>
+  <title>الدفع</title>
 </head>
 <body>
-  <p>جاري تحويلك إلى بوابة الدفع...</p>
+  <h3>جاري تحويلك إلى بوابة الدفع...</h3>
 
   <form id="pgForm" method="POST">
     <input type="hidden" name="id">
@@ -17,10 +17,12 @@
   <script>
     fetch('https://neoleap-payment.nitco-mobile.workers.dev/create-payment', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({ amount: "10.00" })
     })
-    .then(r => r.json())
+    .then(res => res.json())
     .then(data => {
       const form = document.getElementById('pgForm');
       form.action = data.pgUrl;
@@ -29,6 +31,10 @@
       form.responseURL.value = data.responseURL;
       form.errorURL.value = data.errorURL;
       form.submit();
+    })
+    .catch(err => {
+      document.body.innerHTML = 'خطأ في بدء عملية الدفع';
+      console.error(err);
     });
   </script>
 </body>
