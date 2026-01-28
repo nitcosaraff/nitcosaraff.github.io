@@ -3,56 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>حالة الدفع</title>
+    <title>نتيجة الدفع</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 50px; }
-        .loader { border: 16px solid #f3f3f3; border-radius: 50%; border-top: 16px solid #3498db; width: 80px; height: 80px; animation: spin 2s linear infinite; margin: 0 auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        h2 { color: #333; margin-top: 20px; }
+        body { font-family: sans-serif; text-align: center; padding: 50px; }
+        h1 { color: #27ae60; }
+        p { color: #555; }
     </style>
 </head>
 <body>
-
-    <div id="loading">
-        <div class="loader"></div>
-        <h2>جاري التحقق من عملية الدفع...</h2>
-        <p>برجاء عدم إغلاق الصفحة</p>
-    </div>
-
-    <div id="result" style="display:none;">
-        <h2 id="message"></h2>
-    </div>
-
+    <h1>جاري معالجة الدفع...</h1>
+    <p>يرجى الانتظار، سيتم إعادتك للتطبيق تلقائياً.</p>
+    
     <script>
-        // هذه الصفحة تستقبل البيانات من البنك بعد الدفع
-        // البنك يرسل البيانات كـ POST request أو Query Params حسب الإعداد
-        // بما أننا Redirect، غالبًا البنك يرجعنا بـ Query Params مشفرة أو PaymentID
-
-        window.onload = function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const paymentId = urlParams.get('paymentId');
-            const trandata = urlParams.get('trandata'); // النتيجة المشفرة
-            
-            // هنا اللعبة: 
-            // فلاتر بتراقب الرابط ده. أول ما فلاتر تشوف الرابط ده فتح في الـ WebView
-            // فلاتر هتقفل المتصفح وتأخذ البيانات دي وتكلم الـ Worker تاني عشان يفك التشفير
-            // أو تعرض رسالة نجاح مبدئية هنا.
-            
-            if(paymentId) {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('result').style.display = 'block';
-                document.getElementById('message').innerText = "تمت العملية، جاري العودة للتطبيق...";
-                document.getElementById('message').style.color = "green";
-                
-                // رسالة للتطبيق (لو بيسمع للـ JS Channels)
-                // PaymentComplete.postMessage(paymentId);
-            } else {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('result').style.display = 'block';
-                document.getElementById('message').innerText = "لم يتم العثور على تفاصيل العملية";
-                document.getElementById('message').style.color = "red";
-            }
-        };
+        // هذه الصفحة ستفتح بعد انتهاء الدفع في صفحة البنك
+        // الوظيفة الأساسية: فلاتر ستراقب هذا الرابط وتغلق الصفحة
+        console.log("Payment flow finished on GitHub Pages");
     </script>
 </body>
 </html>
