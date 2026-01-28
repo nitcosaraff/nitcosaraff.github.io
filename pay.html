@@ -2,16 +2,24 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <title>تحويل للدفع</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابة الدفع</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 2s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
-    <div id="status">
-        <h3>جاري تحويلك لبوابة الدفع...</h3>
+
+    <div id="status-area">
+        <h3>جاري تحويلك لبوابة الدفع الآمنة...</h3>
+        <div class="loader"></div>
     </div>
 
     <script>
-    async function startPayment() {
-        const statusDiv = document.getElementById("status");
+    (async function init() {
+        const statusDiv = document.getElementById("status-area");
         
         try {
             const response = await fetch("https://neoleap-payment.nitco-mobile.workers.dev/init-payment", {
@@ -20,28 +28,26 @@
                 body: JSON.stringify({ amount: "1.00" })
             });
 
-            const res = await response.json();
-            console.log("Response:", res);
+            const data = await response.json();
+            console.log("Response from Worker:", data);
 
-            // التحقق من صحة الاستجابة بناءً على الـ JSON الذي أرفقته
-            if (res && res[0] && res[0].status === "1") {
-                const result = res[0].result;
-                const splitIndex = result.indexOf(":");
-                const paymentUrl = result.substring(splitIndex + 1);
+            if (data && data[0] && data[0].status === "1") {
+                const resultStr = data[0].result;
+                const splitIndex = resultStr.indexOf(":");
+                // استخراج الرابط بعد النقطتين الرأسيتين
+                const paymentUrl = resultStr.substring(splitIndex + 1);
 
                 console.log("Redirecting to:", paymentUrl);
                 window.location.href = paymentUrl;
             } else {
-                statusDiv.innerHTML = "<h3>فشل في تهيئة الدفع: " + (res[0]?.result || "خطأ غير معروف") + "</h3>";
+                statusDiv.innerHTML = "<h3>فشل بدء عملية الدفع: " + (data[0]?.result || "خطأ غير معروف") + "</h3>";
             }
-        } catch (err) {
-            console.error("Error:", err);
-            statusDiv.innerHTML = "<h3>حدث خطأ في الاتصال بالخادم</h3>";
+        } catch (error) {
+            console.error("Fetch Error:", error);
+            statusDiv.innerHTML = "<h3>خطأ في الاتصال بالسيرفر</h3>";
         }
-    }
-
-    // تشغيل الدالة فور تحميل الصفحة
-    startPayment();
+    })();
     </script>
+
 </body>
 </html>
