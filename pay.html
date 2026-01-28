@@ -2,23 +2,22 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>Payment</title>
+  <title>Pay</title>
 </head>
 <body>
-<h3>جاري تحويلك إلى صفحة الدفع...</h3>
+<h3>جاري تحويلك للدفع...</h3>
 
 <script>
-fetch("https://neoleap-payment.nitco-mobile.workers.dev/init-payment", {
+fetch("https://neoleap-payment.nitco-mobile.workers.dev", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ amount: "1.00" })
 })
 .then(r => r.json())
 .then(res => {
-  console.log(res);
-
-  if (!res[0] || !res[0].paymentId) {
-    document.body.innerHTML = "فشل إنشاء عملية الدفع";
+  if (!res[0]?.paymentId) {
+    document.body.innerHTML = "خطأ في بدء عملية الدفع";
+    console.error(res);
     return;
   }
 
@@ -28,12 +27,7 @@ fetch("https://neoleap-payment.nitco-mobile.workers.dev/init-payment", {
     "https://securepayments.alrajhibank.com.sa/pg/TranportalVbv.htm" +
     "?paymentId=" + paymentId +
     "&id=8NW1vFi2IJ6f5vb";
-})
-.catch(err => {
-  console.error(err);
-  document.body.innerHTML = "خطأ في الاتصال";
 });
 </script>
-
 </body>
 </html>
