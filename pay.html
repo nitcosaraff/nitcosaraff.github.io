@@ -1,88 +1,41 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بوابة الدفع</title>
-
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            text-align: center;
-            padding-top: 100px;
-            background-color: #f4f4f4;
-        }
-        .loader {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #28a745;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .message {
-            font-size: 18px;
-            color: #555;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>الدفع</title>
 </head>
-
 <body>
 
-<div id="loading-area">
-    <div class="loader"></div>
-    <p class="message">جاري الاتصال بالبنك الآمن...</p>
-</div>
+<h3>جاري تحويلك إلى بوابة الدفع الآمنة…</h3>
 
 <script>
-(async function startPayment() {
-    try {
-        const response = await fetch(
-            "https://neoleap-payment.nitco-mobile.workers.dev/init-payment",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    amount: "1.00"
-                })
-            }
-        );
+(async () => {
+  try {
+    const res = await fetch(
+      "https://neoleap-payment.nitco-mobile.workers.dev/init-payment",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: "1.00" })
+      }
+    );
 
-        const data = await response.json();
-        console.log("Bank Response:", data);
+    const data = await res.json();
+    console.log("Init payment response:", data);
 
-        if (data && data[0] && data[0].status === "1") {
-            const resultStr = data[0].result; 
-            // مثال: "SUCCESS:6002026028123456"
-
-            // استخراج الـ Payment ID (اللي بعد النقطتين)
-            const paymentId = resultStr.split(":")[1];
-
-            if (paymentId) {
-                const finalUrl =
-                    `https://securepayments.alrajhibank.com.sa/pg/payment/hosted.htm?paymentId=${paymentId}`;
-
-                console.log("Redirecting to:", finalUrl);
-                window.location.href = finalUrl;
-            } else {
-                alert("لم يتم العثور على Payment ID في رد البنك");
-            }
-
-        } else {
-            document.body.innerHTML =
-                `<h3 style="color:red">فشل العملية: ${data[0]?.result || "خطأ غير معروف"}</h3>`;
-        }
-
-    } catch (error) {
-        console.error("Error:", error);
-        document.body.innerHTML =
-            "<h3 style='color:red'>خطأ في الاتصال بالسيرفر</h3>";
+    if (data[0] && data[0].status === "1") {
+      const resultStr = data[0].result;
+      const paymentUrl = resultStr.substring(
+        resultStr.indexOf("http")
+      );
+      window.location.href = paymentUrl;
+    } else {
+      document.body.innerHTML = "فشل بدء عملية الدفع";
     }
+  } catch (e) {
+    console.error(e);
+    document.body.innerHTML = "خطأ في الاتصال";
+  }
 })();
 </script>
 
