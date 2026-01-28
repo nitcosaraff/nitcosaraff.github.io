@@ -1,41 +1,33 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>الدفع</title>
+  <title>Pay</title>
 </head>
 <body>
-  <h3>جاري تحويلك إلى بوابة الدفع...</h3>
+<h3>جاري تحويلك للدفع...</h3>
 
-  <form
-    id="pgForm"
-    method="POST"
-    action="https://securepayments.alrajhibank.com.sa/pg/payment/hosted.htm"
-    enctype="application/x-www-form-urlencoded"
-  >
-    <input type="hidden" name="id">
-    <input type="hidden" name="trandata">
-  </form>
+<script>
+fetch("https://neoleap-payment.nitco-mobile.workers.dev/init-payment", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ amount: "1.00" })
+})
+.then(r => r.json())
+.then(res => {
+  if (!res[0]?.paymentId) {
+    document.body.innerHTML = "فشل إنشاء الدفع";
+    console.error(res);
+    return;
+  }
 
-  <script>
-    fetch('https://neoleap-payment.nitco-mobile.workers.dev/create-payment', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount: "10.00" })
-    })
-    .then(res => res.json())
-    .then(data => {
-      const form = document.getElementById('pgForm');
+  const paymentId = res[0].paymentId;
 
-      form.querySelector('[name="id"]').value = data.id;
-      form.querySelector('[name="trandata"]').value = data.trandata;
-
-      form.submit();
-    })
-    .catch(err => {
-      console.error(err);
-      document.body.innerHTML = 'خطأ في بدء عملية الدفع';
-    });
-  </script>
+  window.location.href =
+    "https://securepayments.alrajhibank.com.sa/pg/TranportalVbv.htm" +
+    "?paymentId=" + paymentId +
+    "&id=8NW1vFi2IJ6f5vb";
+});
+</script>
 </body>
 </html>
