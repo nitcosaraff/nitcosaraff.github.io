@@ -1,90 +1,72 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بوابة الدفع</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            text-align: center;
-            padding-top: 50px;
-        }
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 2s linear infinite;
-            margin: 20px auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>بوابة الدفع</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 60px;
+    }
+    .loader {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
 
-<div id="status-area">
-    <h3>جاري تحويلك لبوابة الدفع الآمنة...</h3>
-    <div class="loader"></div>
+<div id="status">
+  <h3>جاري تحويلك لبوابة الدفع الآمنة...</h3>
+  <div class="loader"></div>
 </div>
 
 <script>
-(async function init() {
-    const statusDiv = document.getElementById("status-area");
+(async () => {
+  const statusDiv = document.getElementById("status");
 
-    try {
-        const response = await fetch(
-            "https://neoleap-payment.nitco-mobile.workers.dev/init-payment",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ amount: "1.00" })
-            }
+  try {
+    const res = await fetch(
+      "https://neoleap-payment.nitco-mobile.workers.dev/init-payment",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: "1.00" })
+      }
+    );
+
+    const data = await res.json();
+    console.log("Worker response:", data);
+
+    if (data?.[0]?.status === "1") {
+      const resultStr = data[0].result;
+
+      if (typeof resultStr === "string" && resultStr.includes("http")) {
+        const paymentUrl = resultStr.substring(
+          resultStr.indexOf("http")
         );
-
-        const data = await response.json();
-        console.log("Response from Worker:", data);
-
-        // التحقق من نجاح العملية
-        if (data && data[0] && data[0].status === "1") {
-            const resultStr = data[0].result;
-
-            // التحقق من أن النتيجة تحتوي على رابط
-            if (typeof resultStr === "string" && resultStr.includes("http")) {
-
-                // الطريقة الأكثر أمانًا لاستخراج الرابط
-                const paymentUrl = resultStr.substring(
-                    resultStr.indexOf("http")
-                );
-
-                console.log("Redirecting to:", paymentUrl);
-
-                // التحويل لبوابة الدفع
-                window.location.href = paymentUrl;
-
-            } else {
-                statusDiv.innerHTML =
-                    "<h3>خطأ في تنسيق الرابط المستلم من بوابة الدفع</h3>";
-                console.error("Invalid result format:", resultStr);
-            }
-
-        } else {
-            statusDiv.innerHTML =
-                "<h3>فشل بدء عملية الدفع</h3>";
-            console.error("Payment init failed:", data);
-        }
-
-    } catch (error) {
-        console.error("Fetch Error:", error);
-        statusDiv.innerHTML =
-            "<h3>خطأ في الاتصال بالسيرفر</h3>";
+        window.location.href = paymentUrl;
+        return;
+      }
     }
+
+    statusDiv.innerHTML = "<h3>فشل بدء عملية الدفع</h3>";
+    console.error("Payment init failed:", data);
+
+  } catch (e) {
+    console.error(e);
+    statusDiv.innerHTML = "<h3>خطأ في الاتصال بالسيرفر</h3>";
+  }
 })();
 </script>
 
