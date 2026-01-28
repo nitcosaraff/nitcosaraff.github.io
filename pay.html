@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Payment</title>
+</head>
+<body>
+  <h3>جاري تحويلك لبوابة الدفع...</h3>
+
+  <script>
+    fetch('https://neoleap-payment.<username>.workers.dev/create-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: "10.00" })
+    })
+    .then(res => res.json())
+    .then(data => {
+      console.log(data);
+      // هنا بعد شوية هنعمل redirect
+    });
+  </script>
+</body>
+</html>
