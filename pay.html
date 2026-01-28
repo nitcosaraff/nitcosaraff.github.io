@@ -1,52 +1,58 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <title>الدفع</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حالة الدفع</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 50px; }
+        .loader { border: 16px solid #f3f3f3; border-radius: 50%; border-top: 16px solid #3498db; width: 80px; height: 80px; animation: spin 2s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        h2 { color: #333; margin-top: 20px; }
+    </style>
 </head>
 <body>
 
-<h3>جاري تحويلك إلى بوابة الدفع الآمنة…</h3>
+    <div id="loading">
+        <div class="loader"></div>
+        <h2>جاري التحقق من عملية الدفع...</h2>
+        <p>برجاء عدم إغلاق الصفحة</p>
+    </div>
 
-<script>
-(async () => {
-  try {
-    const res = await fetch(
-      "https://neoleap-payment.nitco-mobile.workers.dev/init-payment",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: "1.00" })
-      }
-    );
+    <div id="result" style="display:none;">
+        <h2 id="message"></h2>
+    </div>
 
-    const data = await res.json();
-    console.log("Init payment response:", data);
+    <script>
+        // هذه الصفحة تستقبل البيانات من البنك بعد الدفع
+        // البنك يرسل البيانات كـ POST request أو Query Params حسب الإعداد
+        // بما أننا Redirect، غالبًا البنك يرجعنا بـ Query Params مشفرة أو PaymentID
 
-    if (!data[0] || data[0].status !== "1") {
-      document.body.innerHTML = "فشل بدء عملية الدفع";
-      return;
-    }
-
-    const resultStr = data[0].result;
-
-    // ✅ النتيجة دايمًا بالشكل:
-    // paymentId:FULL_URL
-    const parts = resultStr.split(":");
-
-    // نرجّع كل حاجة بعد أول :
-    const paymentUrl = parts.slice(1).join(":");
-
-    console.log("Redirecting to:", paymentUrl);
-
-    window.location.href = paymentUrl;
-
-  } catch (e) {
-    console.error(e);
-    document.body.innerHTML = "خطأ في الاتصال";
-  }
-})();
-</script>
-
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const paymentId = urlParams.get('paymentId');
+            const trandata = urlParams.get('trandata'); // النتيجة المشفرة
+            
+            // هنا اللعبة: 
+            // فلاتر بتراقب الرابط ده. أول ما فلاتر تشوف الرابط ده فتح في الـ WebView
+            // فلاتر هتقفل المتصفح وتأخذ البيانات دي وتكلم الـ Worker تاني عشان يفك التشفير
+            // أو تعرض رسالة نجاح مبدئية هنا.
+            
+            if(paymentId) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('message').innerText = "تمت العملية، جاري العودة للتطبيق...";
+                document.getElementById('message').style.color = "green";
+                
+                // رسالة للتطبيق (لو بيسمع للـ JS Channels)
+                // PaymentComplete.postMessage(paymentId);
+            } else {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('message').innerText = "لم يتم العثور على تفاصيل العملية";
+                document.getElementById('message').style.color = "red";
+            }
+        };
+    </script>
 </body>
 </html>
