@@ -5,35 +5,41 @@
   <title>الدفع</title>
 </head>
 <body>
+
 <h3>جاري تحويلك لبوابة الدفع...</h3>
-  
+
 <script>
 fetch("https://neoleap-payment.nitco-mobile.workers.dev/init-payment", {
   method: "POST",
-  headers: { "Content-Type": "application/json" },
+  headers: {
+    "Content-Type": "application/json"
+  },
   body: JSON.stringify({ amount: "1.00" })
 })
-.then(r => r.json())
-.then(res => {
+.then(function (r) {
+  return r.json();
+})
+.then(function (res) {
   console.log(res);
 
-  if (!res[0]?.result) {
+  if (!res || !res[0] || !res[0].result) {
     document.body.innerHTML = "فشل بدء عملية الدفع";
+    console.error(res);
     return;
   }
 
-  const result = res[0].result;
-  const firstColonIndex = result.indexOf(":");
+  var result = res[0].result;
+  var firstColonIndex = result.indexOf(":");
 
-  const paymentId = result.substring(0, firstColonIndex);
-  const paymentUrl = result.substring(firstColonIndex + 1);
+  var paymentId = result.substring(0, firstColonIndex);
+  var paymentUrl = result.substring(firstColonIndex + 1);
 
   console.log("PaymentID:", paymentId);
   console.log("Redirect URL:", paymentUrl);
 
   window.location.href = paymentUrl;
 })
-.catch(err => {
+.catch(function (err) {
   console.error(err);
   document.body.innerHTML = "خطأ غير متوقع";
 });
@@ -41,5 +47,3 @@ fetch("https://neoleap-payment.nitco-mobile.workers.dev/init-payment", {
 
 </body>
 </html>
-
-
