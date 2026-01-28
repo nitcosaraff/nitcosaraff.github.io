@@ -1,35 +1,29 @@
-<!DOCTYPE html>
-<html lang="ar">
-<head>
-  <meta charset="UTF-8">
-  <title>الدفع</title>
-</head>
-<body>
-<h3>جاري تحويلك لبوابة الدفع…</h3>
-
 <script>
 (async () => {
-  const res = await fetch(
-    "https://neoleap-payment.nitco-mobile.workers.dev/init-payment",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: "1.00" })
-    }
-  );
-
-  const data = await res.json();
-  console.log(data);
-
-  if (data[0]?.status === "1") {
-    const url = data[0].result.substring(
-      data[0].result.indexOf("http")
+  try {
+    const res = await fetch(
+      "https://neoleap-payment.nitco-mobile.workers.dev/init-payment",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: "1.00" })
+      }
     );
-    window.location.href = url;
-  } else {
-    document.body.innerHTML = "فشل بدء عملية الدفع";
+
+    const data = await res.json();
+    console.log(data);
+
+    if (data[0]?.status === "1") {
+      const url = data[0].result.substring(
+        data[0].result.indexOf("http")
+      );
+      window.location.href = url;
+    } else {
+      document.body.innerHTML = "فشل بدء عملية الدفع";
+    }
+  } catch (e) {
+    console.error(e);
+    document.body.innerHTML = "خطأ اتصال";
   }
 })();
 </script>
-</body>
-</html>
