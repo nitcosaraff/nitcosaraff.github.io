@@ -7,12 +7,16 @@
 <body>
   <h3>جاري تحويلك إلى بوابة الدفع...</h3>
 
-  <form id="pgForm" method="POST">
-    <input type="hidden" name="id">
-    <input type="hidden" name="trandata">
-    <input type="hidden" name="responseURL">
-    <input type="hidden" name="errorURL">
-  </form>
+  <form
+    id="pgForm"
+    method="POST"
+    enctype="application/x-www-form-urlencoded"
+  >
+  <input type="hidden" name="id">
+  <input type="hidden" name="trandata">
+  <input type="hidden" name="responseURL">
+  <input type="hidden" name="errorURL">
+  
 
   <script>
     fetch('https://neoleap-payment.nitco-mobile.workers.dev/create-payment', {
