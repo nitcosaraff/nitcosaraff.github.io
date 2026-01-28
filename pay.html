@@ -2,28 +2,27 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>Pay</title>
+  <title>الدفع</title>
 </head>
 <body>
-<h3>جاري تحويلك لصفحة الدفع...</h3>
+<h3>جاري تحويلك لبوابة الدفع...</h3>
 
 <script>
-fetch("https://neoleap-payment.nitco-mobile.workers.dev/init-payment", {
+fetch("https://neoleap-payment.nitco-mobile.workers.dev/", {
   method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ amount: "1.00" })
 })
-.then(res => res.json())
-.then(data => {
-  if (!data[0] || !data[0].paymentId) {
+.then(r => r.json())
+.then(res => {
+  console.log(res);
+
+  if (!res[0]?.paymentId) {
     document.body.innerHTML = "فشل بدء عملية الدفع";
-    console.error(data);
     return;
   }
 
-  const paymentId = data[0].paymentId;
+  const paymentId = res[0].paymentId;
 
   window.location.href =
     "https://securepayments.alrajhibank.com.sa/pg/TranportalVbv.htm" +
