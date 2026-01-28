@@ -5,40 +5,31 @@
   <title>الدفع</title>
 </head>
 <body>
-
-<h3>جاري تحويلك إلى بوابة الدفع...</h3>
+<h3>جاري تحويلك لبوابة الدفع…</h3>
 
 <script>
 (async () => {
-  try {
-    const res = await fetch(
-      "https://neoleap-payment.nitco-mobile.workers.dev/init-payment",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: "1.00" })
-      }
-    );
-
-    const data = await res.json();
-    console.log("INIT RESPONSE:", data);
-
-    if (data && data[0] && data[0].status === "1") {
-      const result = data[0].result;
-
-      const paymentUrl = result.substring(result.indexOf("http"));
-      console.log("Redirecting to:", paymentUrl);
-
-      window.location.href = paymentUrl;
-    } else {
-      document.body.innerHTML = "<h3>فشل بدء عملية الدفع</h3>";
+  const res = await fetch(
+    "https://neoleap-payment.nitco-mobile.workers.dev/init-payment",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount: "1.00" })
     }
-  } catch (e) {
-    console.error(e);
-    document.body.innerHTML = "<h3>خطأ في الاتصال</h3>";
+  );
+
+  const data = await res.json();
+  console.log(data);
+
+  if (data[0]?.status === "1") {
+    const url = data[0].result.substring(
+      data[0].result.indexOf("http")
+    );
+    window.location.href = url;
+  } else {
+    document.body.innerHTML = "فشل بدء عملية الدفع";
   }
 })();
 </script>
-
 </body>
 </html>
