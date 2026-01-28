@@ -12,33 +12,33 @@
     method="POST"
     enctype="application/x-www-form-urlencoded"
   >
-  <input type="hidden" name="id">
-  <input type="hidden" name="trandata">
-  <input type="hidden" name="responseURL">
-  <input type="hidden" name="errorURL">
-  
+    <input type="hidden" name="id">
+    <input type="hidden" name="trandata">
+    <input type="hidden" name="responseURL">
+    <input type="hidden" name="errorURL">
+  </form>
 
   <script>
     fetch('https://neoleap-payment.nitco-mobile.workers.dev/create-payment', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ amount: "10.00" })
     })
     .then(res => res.json())
     .then(data => {
       const form = document.getElementById('pgForm');
+
+      form.querySelector('[name="id"]').value = data.id;
+      form.querySelector('[name="trandata"]').value = data.trandata;
+      form.querySelector('[name="responseURL"]').value = data.responseURL;
+      form.querySelector('[name="errorURL"]').value = data.errorURL;
+
       form.action = data.pgUrl;
-      form.id.value = data.id;
-      form.trandata.value = data.trandata;
-      form.responseURL.value = data.responseURL;
-      form.errorURL.value = data.errorURL;
       form.submit();
     })
     .catch(err => {
-      document.body.innerHTML = 'خطأ في بدء عملية الدفع';
       console.error(err);
+      document.body.innerHTML = 'خطأ في بدء عملية الدفع';
     });
   </script>
 </body>
