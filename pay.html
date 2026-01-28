@@ -17,22 +17,20 @@ fetch("https://neoleap-payment.nitco-mobile.workers.dev/", {
 .then(res => {
   console.log(res);
 
-  if (!res[0]?.paymentId) {
-    document.body.innerHTML = "فشل بدء عملية الدفع";
-    return;
-  }
+if (!res[0]?.result) {
+  document.body.innerHTML = "فشل بدء عملية الدفع";
+  console.error(res);
+  return;
+}
 
-  const paymentId = res[0].paymentId;
+// result شكله: PaymentID:URL
+const [paymentId, paymentUrl] = res[0].result.split(":");
 
-  window.location.href =
-    "https://securepayments.alrajhibank.com.sa/pg/TranportalVbv.htm" +
-    "?paymentId=" + paymentId +
-    "&id=8NW1vFi2IJ6f5vb";
-})
-.catch(err => {
-  console.error(err);
-  document.body.innerHTML = "خطأ غير متوقع";
-});
+// افتح صفحة الدفع مباشرة
+window.location.href = paymentUrl;
+
 </script>
 </body>
 </html>
+
+
