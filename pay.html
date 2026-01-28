@@ -23,15 +23,24 @@
     const data = await res.json();
     console.log("Init payment response:", data);
 
-    if (data[0] && data[0].status === "1") {
-      const resultStr = data[0].result;
-      const paymentUrl = resultStr.substring(
-        resultStr.indexOf("http")
-      );
-      window.location.href = paymentUrl;
-    } else {
+    if (!data[0] || data[0].status !== "1") {
       document.body.innerHTML = "فشل بدء عملية الدفع";
+      return;
     }
+
+    const resultStr = data[0].result;
+
+    // ✅ النتيجة دايمًا بالشكل:
+    // paymentId:FULL_URL
+    const parts = resultStr.split(":");
+
+    // نرجّع كل حاجة بعد أول :
+    const paymentUrl = parts.slice(1).join(":");
+
+    console.log("Redirecting to:", paymentUrl);
+
+    window.location.href = paymentUrl;
+
   } catch (e) {
     console.error(e);
     document.body.innerHTML = "خطأ في الاتصال";
