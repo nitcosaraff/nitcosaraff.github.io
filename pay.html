@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>بوابة الدفع</title>
+
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -30,6 +31,7 @@
         }
     </style>
 </head>
+
 <body>
 
 <div id="loading-area">
@@ -45,7 +47,9 @@
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ amount: "1.00" })
+                body: JSON.stringify({
+                    amount: "1.00"
+                })
             }
         );
 
@@ -53,24 +57,21 @@
         console.log("Bank Response:", data);
 
         if (data && data[0] && data[0].status === "1") {
-            const resultStr = data[0].result;
-            // مثال: "SUCCESS:6002026023456789"
-            
-            // استخراج Payment ID
+            const resultStr = data[0].result; 
+            // مثال: "SUCCESS:6002026028123456"
+
+            // استخراج الـ Payment ID (اللي بعد النقطتين)
             const paymentId = resultStr.split(":")[1];
 
-            if (!paymentId) {
-                throw new Error("Payment ID not found");
+            if (paymentId) {
+                const finalUrl =
+                    `https://securepayments.alrajhibank.com.sa/pg/payment/hosted.htm?paymentId=${paymentId}`;
+
+                console.log("Redirecting to:", finalUrl);
+                window.location.href = finalUrl;
+            } else {
+                alert("لم يتم العثور على Payment ID في رد البنك");
             }
-
-            console.log("Payment ID Captured:", paymentId);
-
-            // بناء رابط الدفع الرسمي
-            const finalPaymentUrl =
-                `https://securepayments.alrajhibank.com.sa/pg/payment/hosted.htm?paymentId=${paymentId}`;
-
-            console.log("Redirecting to Final URL:", finalPaymentUrl);
-            window.location.href = finalPaymentUrl;
 
         } else {
             document.body.innerHTML =
