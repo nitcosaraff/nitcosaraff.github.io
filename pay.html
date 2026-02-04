@@ -1,72 +1,115 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دفع آمن - الراجحي</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; width: 100%; max-width: 400px; }
-        .btn { background-color: #004d7a; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 8px; cursor: pointer; width: 100%; transition: background 0.3s; }
-        .btn:hover { background-color: #003352; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #004d7a; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; display: none; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .error-msg { color: red; margin-top: 15px; font-size: 14px; display: none; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>دفع آمن - الراجحي</title>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f7f6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: white;
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+    }
+    .btn {
+      background-color: #004d7a;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+    }
+    .loader {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #004d7a;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+      display: none;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .error-msg {
+      color: red;
+      margin-top: 15px;
+      display: none;
+    }
+  </style>
 </head>
+
 <body>
+  <div class="card">
+    <h2>إتمام الدفع</h2>
+    <p>المبلغ المطلوب: <strong><span id="amountText"></span> SAR</strong></p>
 
-    <div class="card">
-        <h2>إتمام الدفع</h2>
-        <p>المبلغ المطلوب: <strong>1.00 SAR</strong></p>
-        
-        <button class="btn" onclick="startPayment()">ادفع الآن</button>
-        
-        <div class="loader" id="loader"></div>
-        <div class="error-msg" id="errorMsg"></div>
-    </div>
+    <button class="btn" onclick="startPayment()">ادفع الآن</button>
+    <div class="loader" id="loader"></div>
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
 
-    <script>
-        async function startPayment() {
-            const btn = document.querySelector('.btn');
-            const loader = document.getElementById('loader');
-            const errorMsg = document.getElementById('errorMsg');
+  <script>
+    function getAmountFromQuery() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("amount") || "1.00";
+    }
 
-            btn.style.display = 'none';
-            loader.style.display = 'block';
-            errorMsg.style.display = 'none';
+    const AMOUNT = getAmountFromQuery();
+    document.getElementById("amountText").innerText = AMOUNT;
 
-            try {
-                // استبدل الرابط أدناه برابط الـ Worker الخاص بك
-                const workerUrl = "https://neoleap-payment.nitco-mobile.workers.dev"; 
+    async function startPayment() {
+      const btn = document.querySelector('.btn');
+      const loader = document.getElementById('loader');
+      const errorMsg = document.getElementById('errorMsg');
 
-                const response = await fetch(workerUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        amount: "1.00",
-                        customerInfo: "Client Test Transaction"
-                    })
-                });
+      btn.style.display = 'none';
+      loader.style.display = 'block';
+      errorMsg.style.display = 'none';
 
-                const data = await response.json();
+      try {
+        const workerUrl = "https://neoleap-payment.nitco-mobile.workers.dev";
 
-                if (data.success && data.redirectUrl) {
-                    // توجيه المستخدم لصفحة البنك
-                    window.location.href = data.redirectUrl;
-                } else {
-                    throw new Error(data.error || "فشل الاتصال بالبوابة");
-                }
+        const response = await fetch(workerUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: AMOUNT,
+            customerInfo: "Client Test Transaction"
+          })
+        });
 
-            } catch (err) {
-                console.error(err);
-                loader.style.display = 'none';
-                btn.style.display = 'block';
-                errorMsg.style.display = 'block';
-                errorMsg.innerText = "خطأ: " + err.message;
-            }
+        const data = await response.json();
+
+        if (data.success && data.redirectUrl) {
+          window.location.href = data.redirectUrl;
+        } else {
+          throw new Error(data.error || "فشل الاتصال بالبوابة");
         }
-    </script>
-
+      } catch (err) {
+        loader.style.display = 'none';
+        btn.style.display = 'block';
+        errorMsg.style.display = 'block';
+        errorMsg.innerText = "خطأ: " + err.message;
+      }
+    }
+  </script>
 </body>
 </html>
