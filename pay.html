@@ -4,13 +4,16 @@
     return params.get("amount") || "1.00";
   }
 
-  const AMOUNT = getAmountFromQuery();
-  document.getElementById("amountText").innerText = AMOUNT;
+  window.addEventListener('load', function() {
+    const AMOUNT = getAmountFromQuery();
+    
+    // ✅ دلوقتي الـ DOM موجود
+    document.getElementById("amountText").innerText = AMOUNT;
 
-  // ✅ ابدأ أوتوماتيك
-  window.addEventListener('load', startPayment);
+    startPayment(AMOUNT);
+  });
 
-  async function startPayment() {
+  async function startPayment(AMOUNT) {
     const btn = document.querySelector('.btn');
     const loader = document.getElementById('loader');
     const errorMsg = document.getElementById('errorMsg');
