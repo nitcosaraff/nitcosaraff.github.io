@@ -64,9 +64,9 @@
   </div>
 
   <script>
-    // تم تعديل الدالة لتعيد القيمة 5 دائماً وتجاهل أي قيمة في الرابط
     function getAmountFromQuery() {
-      return "5.00"; 
+      const params = new URLSearchParams(window.location.search);
+      return params.get("amount") || "1.00";
     }
 
     window.addEventListener('load', function() {
@@ -90,7 +90,7 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            amount: AMOUNT, // هنا سيتم إرسال "5.00" دائماً إلى السيرفر
+            amount: AMOUNT,
             customerInfo: "Client Test Transaction"
           })
         });
