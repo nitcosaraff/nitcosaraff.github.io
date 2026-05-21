@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>دفع آمن</title>
+  <title>دفع آمن - تيست</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -23,15 +23,15 @@
       width: 100%;
       max-width: 400px;
     }
-    .btn {
-      background-color: #004d7a;
-      color: white;
-      border: none;
-      padding: 15px 30px;
-      font-size: 18px;
+    .badge {
+      display: inline-block;
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffc107;
       border-radius: 8px;
-      cursor: pointer;
-      width: 100%;
+      padding: 5px 12px;
+      font-size: 13px;
+      margin-bottom: 14px;
     }
     .loader {
       border: 4px solid #f3f3f3;
@@ -44,7 +44,7 @@
       display: none;
     }
     @keyframes spin {
-      0% { transform: rotate(0deg); }
+      0%   { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
     .error-msg {
@@ -52,61 +52,70 @@
       margin-top: 15px;
       display: none;
     }
+    .retry-btn {
+      background-color: #004d7a;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div class="card">
+    <div class="badge">⚠️ تيست — سيتم خصم 5 ريال فقط</div>
     <h2>إتمام الدفع</h2>
-    <p>المبلغ المطلوب: <strong><span id="amountText"></span> SAR</strong></p>
-    <button class="btn">جاري التحميل...</button>
+    <p>المبلغ الفعلي: <strong><span id="amountText">5.00</span> SAR</strong></p>
     <div class="loader" id="loader"></div>
     <div class="error-msg" id="errorMsg"></div>
+    <button class="retry-btn" id="retryBtn" onclick="startPayment('5.00')">
+      إعادة المحاولة
+    </button>
   </div>
 
   <script>
-    function getAmountFromQuery() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get("amount") || "1.00";
-    }
-
-    window.addEventListener('load', function() {
-      const AMOUNT = getAmountFromQuery();
-      document.getElementById("amountText").innerText = AMOUNT;
-      startPayment(AMOUNT);
+    window.addEventListener('load', function () {
+      startPayment('5.00');
     });
 
-    async function startPayment(AMOUNT) {
-      const btn = document.querySelector('.btn');
-      const loader = document.getElementById('loader');
-      const errorMsg = document.getElementById('errorMsg');
+    async function startPayment(amount) {
+      const loader    = document.getElementById('loader');
+      const errorMsg  = document.getElementById('errorMsg');
+      const retryBtn  = document.getElementById('retryBtn');
 
-      btn.style.display = 'none';
-      loader.style.display = 'block';
+      loader.style.display   = 'block';
       errorMsg.style.display = 'none';
+      retryBtn.style.display = 'none';
 
       try {
-        const workerUrl = "https://neoleap-payment.nitco-mobile.workers.dev";
-        const response = await fetch(workerUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            amount: AMOUNT,
-            customerInfo: "Client Test Transaction"
-          })
-        });
+        const response = await fetch(
+          'https://neoleap-payment.nitco-mobile.workers.dev',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amount: amount,
+              customerInfo: 'Test Transaction - 5 SAR'
+            })
+          }
+        );
 
         const data = await response.json();
 
         if (data.success && data.redirectUrl) {
           window.location.href = data.redirectUrl;
         } else {
-          throw new Error(data.error || "فشل الاتصال بالبوابة");
+          throw new Error(data.error || 'فشل الاتصال بالبوابة');
         }
       } catch (err) {
-        loader.style.display = 'none';
-        btn.style.display = 'block';
+        loader.style.display   = 'none';
         errorMsg.style.display = 'block';
-        errorMsg.innerText = "خطأ: " + err.message;
+        retryBtn.style.display = 'block';
+        errorMsg.innerText = 'خطأ: ' + err.message;
       }
     }
   </script>
