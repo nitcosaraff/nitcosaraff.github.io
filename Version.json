@@ -68,6 +68,11 @@
       "name": "Alwattan 3",
       "host": "37.224.26.107:88",
       "orgId": "1"
+    },
+    {
+      "name": "Alwattan 4",
+      "host": "85.194.113.173:88",
+      "orgId": "1"
     }
   ],
   "last_version": "3.0.3",
