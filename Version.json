@@ -55,22 +55,22 @@
   ],
   "polysAlwattan": [
     {
-      "name": "Alwattan 1",
+      "name": "عتيقة — Ateqah",
       "host": "51.211.166.29:88",
       "orgId": "1"
     },
     {
-      "name": "Alwattan 2",
+      "name": "الروابي — Al Rawabi",
       "host": "37.224.10.67:88",
       "orgId": "1"
     },
     {
-      "name": "Alwattan 3",
+      "name": "الربوة — Al Rabwah",
       "host": "37.224.26.107:88",
       "orgId": "1"
     },
     {
-      "name": "Alwattan 4",
+      "name": "الشفا — Al Shifa",
       "host": "85.194.113.173:88",
       "orgId": "1"
     }
