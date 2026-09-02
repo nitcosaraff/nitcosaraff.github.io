@@ -80,7 +80,17 @@
   "nitco_apps": {
     "MZN": {
       "patients_app": "1.5.0",
-      "doctors_app": "1.4.5"
+      "doctors_app": "1.4.5",
+      "baseLink":"https://mzntabebcom.careofme.net",
+      "orgID":28,
+      "branchID":47
+    },
+    "ENAYA": {
+      "patients_app": "1.0.1",
+      "doctors_app": "1.0.1",
+      "baseLink":"https://mzntabebcom.careofme.net",
+      "orgID":28,
+      "branchID":47
     },
     "Shoaa": "1.2.4",
     "Alwattan": "1.0.1",
