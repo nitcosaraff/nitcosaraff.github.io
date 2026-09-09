@@ -75,12 +75,12 @@
       "orgId": "1"
     }
   ],
-  "last_version": "3.0.3",
-  "last_versionEG": "1.1.0",
+  "last_version": "3.0.2",
+  "last_versionEG": "1.0.8",
   "nitco_apps": {
     "MZN": {
-      "patients_app": "1.5.0",
-      "doctors_app": "1.4.5",
+      "patients_app": "1.5.1",
+      "doctors_app": "1.4.6",
       "baseLink":"https://mzntabebcom.careofme.net",
       "orgID":28,
       "branchID":47
@@ -92,8 +92,8 @@
       "orgID":28,
       "branchID":47
     },
-    "Shoaa": "1.2.4",
-    "Alwattan": "1.0.1",
+    "Shoaa": "1.2.7",
+    "Alwattan": "1.2.6",
     "Salamat": "1.1.1"
   },
   "configurations": {
