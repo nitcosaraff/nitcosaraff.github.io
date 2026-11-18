@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>حضور الطب الاتصالي - Shoaa Telemedicine</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* تنسيقات إضافية خاصة بجدول الحضور ليتسع لكل الأعمدة */
+    .container.wide {
+      max-width: 1100px;
+    }
+    .table-responsive {
+      overflow-x: auto;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: bold;
+      background: #eef2ff;
+      color: #667eea;
+    }
+    .badge-time {
+      background: #e6f4ea;
+      color: #137333;
+      direction: ltr;
+    }
+    .raw-details {
+      font-size: 13px;
+      color: #666;
+      max-width: 220px;
+      margin: 0 auto;
+      word-break: break-word;
+    }
+  </style>
+  <script>
+    // حماية الصفحة: إعادة التوجيه لـ index.html إذا لم يسجل الدخول
+    if (sessionStorage.getItem('shoaa_logged_in') !== 'true') {
+      window.location.replace('index.html');
+    }
+  </script>
+</head>
+<body>
+
+  <!-- شاشة التحميل -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner">
+      <div class="spinner">🔄</div>
+      <p style="margin-top: 10px;">جاري تحميل سجلات الحضور...</p>
+    </div>
+  </div>
+
+  <div class="container wide">
+    <div class="top-bar">
+      <a href="index.html" class="btn-nav">➡️ رجوع للخدمات</a>
+      <button class="btn-nav btn-logout" onclick="logout()">🚪 تسجيل خروج</button>
+    </div>
+
+    <h1>📋 حضور الطب الاتصالي</h1>
+    <p class="subtitle">Shoaa Telemedicine Attendance Logs</p>
+
+    <div id="message" class="message"></div>
+
+    <!-- شريط البحث والتحديث -->
+    <div class="controls">
+      <input 
+        type="text" 
+        id="searchInput" 
+        placeholder="🔍 ابحث برقم الموعد، اسم/كود المريض، أو الطبيب..."
+        oninput="filterAttendance()"
+      >
+      <button class="btn-refresh" onclick="window.loadAttendance()" id="refreshBtn" title="تحديث البيانات">
+        🔄
+      </button>
+    </div>
+
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>رقم الموعد</th>
+            <th>بيانات المريض</th>
+            <th>بيانات الطبيب</th>
+            <th>وقت تسجيل الحضور</th>
+          </tr>
+        </thead>
+        <tbody id="attendanceBody">
+          <tr>
+            <td colspan="5" class="empty">جاري الاتصال بقاعدة البيانات...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- الإحصائيات -->
+    <div class="stats">
+      <div class="stat-item">
+        <div class="stat-value" id="totalCount">0</div>
+        <div class="stat-label">إجمالي السجلات المعروضة</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="lastUpdate">-</div>
+        <div class="stat-label">آخر تحديث</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ربط Firebase Firestore عبر Modular SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // ⚠️ ضع بيانات Web App الخاصة بمشروع shoaa-app من Firebase Console
+    const firebaseConfig = {
+      apiKey: "YOUR_FIREBASE_API_KEY",
+      authDomain: "shoaa-app.firebaseapp.com",
+      projectId: "shoaa-app",
+      storageBucket: "shoaa-app.appspot.com",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let allRecords = [];
+    let isLoading = false;
+
+    // قراءة الحقول بمرونة مهما كان اسم الحقل المحفوظ من تطبيق الموبايل
+    function extractField(docData, docId, possibleKeys, fallback = '-') {
+      for (const key of possibleKeys) {
+        if (docData[key] !== undefined && docData[key] !== null && docData[key] !== '') {
+          return docData[key];
+        }
+      }
+      return fallback;
+    }
+
+    // تحويل التوقيت (سواء Firestore Timestamp أو ISO String) لتاريخ مقروء
+    function formatDate(val) {
+      if (!val) return { text: '-', raw: 0 };
+      try {
+        let dateObj;
+        if (typeof val.toDate === 'function') {
+          dateObj = val.toDate();
+        } else if (val.seconds) {
+          dateObj = new Date(val.seconds * 1000);
+        } else {
+          dateObj = new Date(val);
+        }
+
+        if (isNaN(dateObj.getTime())) return { text: String(val), raw: 0 };
+
+        return {
+          text: dateObj.toLocaleString('ar-EG', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+          raw: dateObj.getTime()
+        };
+      } catch (e) {
+        return { text: String(val), raw: 0 };
+      }
+    }
+
+    async function loadAttendance() {
+      if (isLoading) return;
+      isLoading = true;
+      setLoadingUI(true);
+
+      try {
+        const querySnapshot = await getDocs(collection(db, "appointment_attendance"));
+        allRecords = [];
+
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+
+          const appointmentId = extractField(data, doc.id, [
+            'appointmentId', 'appointment_id', 'bookingId', 'booking_id', 'id'
+          ], doc.id);
+
+          const patientInfo = extractField(data, doc.id, [
+            'patientName', 'patient_name', 'patientId', 'patient_id', 'patientCode', 'patient_code'
+          ]);
+
+          const doctorInfo = extractField(data, doc.id, [
+            'doctorName', 'doctor_name', 'doctorId', 'doctor_id', 'doctorCode', 'doctor_code'
+          ]);
+
+          const rawTime = extractField(data, doc.id, [
+            'attendedAt', 'attended_at', 'timestamp', 'createdAt', 'created_at', 'date', 'time'
+          ], null);
+
+          const formattedTime = formatDate(rawTime);
+
+          allRecords.push({
+            docId: doc.id,
+            appointmentId: String(appointmentId),
+            patientInfo: String(patientInfo),
+            doctorInfo: String(doctorInfo),
+            timeText: formattedTime.text,
+            timeRaw: formattedTime.raw,
+            rawData: data
+          });
+        });
+
+        // ترتيب تنازلي حسب وقت الحضور (الأحدث أولاً)
+        allRecords.sort((a, b) => b.timeRaw - a.timeRaw);
+
+        filterAttendance();
+        updateLastUpdateTime();
+      } catch (error) {
+        console.error("Firestore Error:", error);
+        showMessage('❌ خطأ في جلب البيانات من Firebase: تأكد من إعدادات Config و Rules', 'error');
+        document.getElementById('attendanceBody').innerHTML = `
+          <tr><td colspan="5" class="empty">تعذر تحميل البيانات (${error.code || error.message})</td></tr>
+        `;
+      }
+
+      isLoading = false;
+      setLoadingUI(false);
+    }
+
+    function renderTable(records) {
+      const tbody = document.getElementById('attendanceBody');
+      const countEl = document.getElementById('totalCount');
+
+      countEl.textContent = records.length;
+
+      if (records.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty">لا توجد سجلات حضور مطابقة</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = records.map((rec, index) => `
+        <tr>
+          <td><strong>${index + 1}</strong></td>
+          <td><span class="badge">${rec.appointmentId}</span></td>
+          <td><strong>${rec.patientInfo}</strong></td>
+          <td><strong>${rec.doctorInfo}</strong></td>
+          <td><span class="badge badge-time">${rec.timeText}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    window.filterAttendance = function() {
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      if (!q) {
+        renderTable(allRecords);
+        return;
+      }
+
+      const filtered = allRecords.filter(item =>
+        item.appointmentId.toLowerCase().includes(q) ||
+        item.patientInfo.toLowerCase().includes(q) ||
+        item.doctorInfo.toLowerCase().includes(q) ||
+        item.timeText.toLowerCase().includes(q)
+      );
+
+      renderTable(filtered);
+    };
+
+    function setLoadingUI(loadingState) {
+      const btn = document.getElementById('refreshBtn');
+      const overlay = document.getElementById('loadingOverlay');
+
+      if (loadingState) {
+        btn.innerHTML = '<span class="spinner">🔄</span>';
+        btn.disabled = true;
+        overlay.classList.add('active');
+      } else {
+        btn.innerHTML = '🔄';
+        btn.disabled = false;
+        overlay.classList.remove('active');
+      }
+    }
+
+    function showMessage(msg, type) {
+      const messageDiv = document.getElementById('message');
+      messageDiv.textContent = msg;
+      messageDiv.className = `message ${type}`;
+      messageDiv.style.display = 'block';
+      setTimeout(() => { messageDiv.style.display = 'none'; }, 4000);
+    }
+
+    function updateLastUpdateTime() {
+      const now = new Date();
+      document.getElementById('lastUpdate').textContent = now.toLocaleTimeString('ar-EG', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    window.logout = function() {
+      sessionStorage.removeItem('shoaa_logged_in');
+      window.location.replace('index.html');
+    };
+
+    window.loadAttendance = loadAttendance;
+
+    // تشغيل الجلب التلقائي عند فتح الصفحة
+    loadAttendance();
+  </script>
+</body>
+</html>

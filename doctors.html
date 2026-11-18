@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إدارة أكواد الأطباء - Shoaa Telemedicine</title>
+  <link rel="stylesheet" href="style.css">
+  <script>
+    // حماية الصفحة: إعادة التوجيه لـ index.html إذا لم يسجل الدخول
+    if (sessionStorage.getItem('shoaa_logged_in') !== 'true') {
+      window.location.replace('index.html');
+    }
+  </script>
+</head>
+<body>
+
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner">
+      <div class="spinner">🔄</div>
+      <p style="margin-top: 10px;">جاري المعالجة...</p>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="top-bar">
+      <a href="index.html" class="btn-nav">➡️ رجوع للخدمات</a>
+      <button class="btn-nav btn-logout" onclick="logout()">🚪 تسجيل خروج</button>
+    </div>
+
+    <h1>🏥 إدارة أكواد الأطباء</h1>
+    <p class="subtitle">Shoaa Telemedicine Doctors Management</p>
+    
+    <div id="message" class="message"></div>
+    
+    <div class="controls">
+      <input 
+        type="text" 
+        id="doctorCode" 
+        placeholder="أدخل كود الطبيب"
+        onkeypress="if(event.key==='Enter') addDoctor()"
+      >
+      <button class="btn-add" onclick="addDoctor()" id="addBtn">
+        ➕ إضافة
+      </button>
+      <button class="btn-refresh" onclick="loadDoctors()" id="refreshBtn">
+        🔄
+      </button>
+    </div>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>الكود</th>
+          <th style="width: 150px;">الإجراء</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr>
+          <td colspan="3" class="empty">جاري التحميل...</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="stats">
+      <div class="stat-item">
+        <div class="stat-value" id="totalCount">0</div>
+        <div class="stat-label">إجمالي الأكواد</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="lastUpdate">-</div>
+        <div class="stat-label">آخر تحديث</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'https://shoaa-telemedicine-doctors.nitco-mobile.workers.dev';
+    
+    let doctors = [];
+    let loading = false;
+
+    loadDoctors();
+
+    function logout() {
+      sessionStorage.removeItem('shoaa_logged_in');
+      window.location.replace('index.html');
+    }
+
+    function showLoading(show) {
+      const overlay = document.getElementById('loadingOverlay');
+      if (show) {
+        overlay.classList.add('active');
+      } else {
+        overlay.classList.remove('active');
+      }
+    }
+
+    async function loadDoctors() {
+      if (loading) return;
+      loading = true;
+      updateRefreshButton(true);
+      
+      try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        doctors = data.doctors || [];
+        renderTable();
+        updateLastUpdateTime();
+      } catch (error) {
+        showMessage('❌ خطأ في تحميل البيانات', 'error');
+      }
+      
+      loading = false;
+      updateRefreshButton(false);
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      const count = document.getElementById('totalCount');
+      
+      count.textContent = doctors.length;
+      
+      if (doctors.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="empty">لا توجد أكواد حالياً</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = doctors.map((code, index) => `
+        <tr>
+          <td><strong>${index + 1}</strong></td>
+          <td><strong style="color: #667eea; font-size: 20px;">${code}</strong></td>
+          <td>
+            <button class="btn-delete" onclick="deleteDoctor('${code}')">
+              ❌ حذف
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function addDoctor() {
+      if (loading) return;
+      
+      const input = document.getElementById('doctorCode');
+      const code = input.value.trim();
+      
+      if (!code) {
+        showMessage('⚠️ من فضلك أدخل كود الطبيب', 'error');
+        return;
+      }
+      
+      if (doctors.includes(code)) {
+        showMessage('⚠️ الكود موجود بالفعل', 'error');
+        return;
+      }
+      
+      loading = true;
+      showLoading(true);
+      
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'add', code: code })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+          doctors = result.doctors;
+          renderTable();
+          input.value = '';
+          showMessage('✅ تم إضافة الكود بنجاح', 'success');
+          updateLastUpdateTime();
+        } else {
+          throw new Error(result.error || 'خطأ في الإضافة');
+        }
+      } catch (error) {
+        showMessage('❌ خطأ: ' + error.message, 'error');
+      }
+      
+      loading = false;
+      showLoading(false);
+    }
+
+    async function deleteDoctor(code) {
+      if (loading) return;
+      
+      if (!confirm(`هل تريد حذف الكود: ${code}؟`)) return;
+      
+      loading = true;
+      showLoading(true);
+      
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', code: code })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+          doctors = result.doctors;
+          renderTable();
+          showMessage('✅ تم حذف الكود بنجاح', 'success');
+          updateLastUpdateTime();
+        } else {
+          throw new Error(result.error || 'خطأ في الحذف');
+        }
+      } catch (error) {
+        showMessage('❌ خطأ: ' + error.message, 'error');
+      }
+      
+      loading = false;
+      showLoading(false);
+    }
+
+    function showMessage(msg, type) {
+      const messageDiv = document.getElementById('message');
+      messageDiv.textContent = msg;
+      messageDiv.className = `message ${type}`;
+      messageDiv.style.display = 'block';
+      
+      setTimeout(() => {
+        messageDiv.style.display = 'none';
+      }, 3000);
+    }
+
+    function updateRefreshButton(isLoading) {
+      const btn = document.getElementById('refreshBtn');
+      const addBtn = document.getElementById('addBtn');
+      
+      if (isLoading) {
+        btn.innerHTML = '<span class="spinner">🔄</span>';
+        btn.disabled = true;
+        addBtn.disabled = true;
+      } else {
+        btn.innerHTML = '🔄';
+        btn.disabled = false;
+        addBtn.disabled = false;
+      }
+    }
+
+    function updateLastUpdateTime() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('ar-EG', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+      document.getElementById('lastUpdate').textContent = timeStr;
+    }
+  </script>
+</body>
+</html>
