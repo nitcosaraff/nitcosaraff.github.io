@@ -6,9 +6,8 @@
   <title>حضور الطب الاتصالي - Shoaa Telemedicine</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    /* تنسيقات إضافية خاصة بجدول الحضور ليتسع لكل الأعمدة */
     .container.wide {
-      max-width: 1100px;
+      max-width: 1150px;
     }
     .table-responsive {
       overflow-x: auto;
@@ -19,20 +18,24 @@
       border-radius: 20px;
       font-size: 14px;
       font-weight: bold;
+    }
+    .badge-id {
       background: #eef2ff;
       color: #667eea;
     }
-    .badge-time {
-      background: #e6f4ea;
-      color: #137333;
-      direction: ltr;
+    .badge-yes {
+      background: #d4edda;
+      color: #155724;
     }
-    .raw-details {
-      font-size: 13px;
-      color: #666;
-      max-width: 220px;
-      margin: 0 auto;
-      word-break: break-word;
+    .badge-no {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .time-cell {
+      font-size: 14px;
+      color: #555;
+      direction: ltr;
+      display: inline-block;
     }
   </style>
   <script>
@@ -68,7 +71,7 @@
       <input 
         type="text" 
         id="searchInput" 
-        placeholder="🔍 ابحث برقم الموعد، اسم/كود المريض، أو الطبيب..."
+        placeholder="🔍 ابحث برقم الموعد، كود المريض، أو كود الطبيب..."
         oninput="filterAttendance()"
       >
       <button class="btn-refresh" onclick="window.loadAttendance()" id="refreshBtn" title="تحديث البيانات">
@@ -82,14 +85,17 @@
           <tr>
             <th>#</th>
             <th>رقم الموعد</th>
-            <th>بيانات المريض</th>
-            <th>بيانات الطبيب</th>
-            <th>وقت تسجيل الحضور</th>
+            <th>كود المريض</th>
+            <th>حضور المريض</th>
+            <th>وقت دخول المريض</th>
+            <th>كود الطبيب</th>
+            <th>حضور الطبيب</th>
+            <th>وقت دخول الطبيب</th>
           </tr>
         </thead>
         <tbody id="attendanceBody">
           <tr>
-            <td colspan="5" class="empty">جاري الاتصال بقاعدة البيانات...</td>
+            <td colspan="8" class="empty">جاري الاتصال بقاعدة البيانات...</td>
           </tr>
         </tbody>
       </table>
@@ -99,7 +105,11 @@
     <div class="stats">
       <div class="stat-item">
         <div class="stat-value" id="totalCount">0</div>
-        <div class="stat-label">إجمالي السجلات المعروضة</div>
+        <div class="stat-label">إجمالي المواعيد</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="bothAttendedCount">0</div>
+        <div class="stat-label">مكتملة (حضر الطرفان)</div>
       </div>
       <div class="stat-item">
         <div class="stat-value" id="lastUpdate">-</div>
@@ -108,12 +118,11 @@
     </div>
   </div>
 
-  <!-- ربط Firebase Firestore عبر Modular SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, collection, query, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // ⚠️ ضع بيانات Web App الخاصة بمشروع shoaa-app من Firebase Console
+    // ⚠️ ضع بيانات Web App الخاصة بمشروع shoaa-app هنا
     const firebaseConfig = {
       apiKey: "AIzaSyD_ttU1JrTmzCbepZz1ETxvRIuzBmf8ABA",
       authDomain: "shoaa-app.firebaseapp.com",
@@ -130,31 +139,10 @@
     let allRecords = [];
     let isLoading = false;
 
-    // قراءة الحقول بمرونة مهما كان اسم الحقل المحفوظ من تطبيق الموبايل
-    function extractField(docData, docId, possibleKeys, fallback = '-') {
-      for (const key of possibleKeys) {
-        if (docData[key] !== undefined && docData[key] !== null && docData[key] !== '') {
-          return docData[key];
-        }
-      }
-      return fallback;
-    }
-
-    // تحويل التوقيت (سواء Firestore Timestamp أو ISO String) لتاريخ مقروء
-    function formatDate(val) {
-      if (!val) return { text: '-', raw: 0 };
+    function formatTimestamp(ts) {
+      if (!ts) return { text: '-', millis: 0 };
       try {
-        let dateObj;
-        if (typeof val.toDate === 'function') {
-          dateObj = val.toDate();
-        } else if (val.seconds) {
-          dateObj = new Date(val.seconds * 1000);
-        } else {
-          dateObj = new Date(val);
-        }
-
-        if (isNaN(dateObj.getTime())) return { text: String(val), raw: 0 };
-
+        const dateObj = typeof ts.toDate === 'function' ? ts.toDate() : new Date(ts.seconds * 1000);
         return {
           text: dateObj.toLocaleString('ar-EG', {
             year: 'numeric',
@@ -163,10 +151,10 @@
             hour: '2-digit',
             minute: '2-digit'
           }),
-          raw: dateObj.getTime()
+          millis: dateObj.getTime()
         };
       } catch (e) {
-        return { text: String(val), raw: 0 };
+        return { text: '-', millis: 0 };
       }
     }
 
@@ -176,51 +164,38 @@
       setLoadingUI(true);
 
       try {
-        const querySnapshot = await getDocs(collection(db, "appointment_attendance"));
+        // ملاحظة: إذا لم تعدل الـ Rules لـ 500، غير الرقم أدناه إلى 10 مؤقتاً للتجربة
+        const q = query(collection(db, "appointment_attendance"), limit(500));
+        const querySnapshot = await getDocs(q);
         allRecords = [];
 
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-
-          const appointmentId = extractField(data, doc.id, [
-            'appointmentId', 'appointment_id', 'bookingId', 'booking_id', 'id'
-          ], doc.id);
-
-          const patientInfo = extractField(data, doc.id, [
-            'patientName', 'patient_name', 'patientId', 'patient_id', 'patientCode', 'patient_code'
-          ]);
-
-          const doctorInfo = extractField(data, doc.id, [
-            'doctorName', 'doctor_name', 'doctorId', 'doctor_id', 'doctorCode', 'doctor_code'
-          ]);
-
-          const rawTime = extractField(data, doc.id, [
-            'attendedAt', 'attended_at', 'timestamp', 'createdAt', 'created_at', 'date', 'time'
-          ], null);
-
-          const formattedTime = formatDate(rawTime);
+          const pTime = formatTimestamp(data.patientJoinedAt);
+          const dTime = formatTimestamp(data.doctorJoinedAt);
 
           allRecords.push({
-            docId: doc.id,
-            appointmentId: String(appointmentId),
-            patientInfo: String(patientInfo),
-            doctorInfo: String(doctorInfo),
-            timeText: formattedTime.text,
-            timeRaw: formattedTime.raw,
-            rawData: data
+            appointmentId: String(data.appointmentId || doc.id),
+            patientCode: String(data.patientCode || '-'),
+            patientAttended: data.patientAttended === true,
+            patientJoinedText: pTime.text,
+            doctorCode: String(data.doctorCode || '-'),
+            doctorAttended: data.doctorAttended === true,
+            doctorJoinedText: dTime.text,
+            latestActivity: Math.max(pTime.millis, dTime.millis)
           });
         });
 
-        // ترتيب تنازلي حسب وقت الحضور (الأحدث أولاً)
-        allRecords.sort((a, b) => b.timeRaw - a.timeRaw);
+        // ترتيب تنازلي حسب أحدث وقت دخول (للمريض أو الطبيب)
+        allRecords.sort((a, b) => b.latestActivity - a.latestActivity);
 
         filterAttendance();
         updateLastUpdateTime();
       } catch (error) {
         console.error("Firestore Error:", error);
-        showMessage('❌ خطأ في جلب البيانات من Firebase: تأكد من إعدادات Config و Rules', 'error');
+        showMessage('❌ خطأ في التحميل: ' + (error.code || error.message), 'error');
         document.getElementById('attendanceBody').innerHTML = `
-          <tr><td colspan="5" class="empty">تعذر تحميل البيانات (${error.code || error.message})</td></tr>
+          <tr><td colspan="8" class="empty">تعذر تحميل البيانات (${error.code || error.message})</td></tr>
         `;
       }
 
@@ -230,22 +205,34 @@
 
     function renderTable(records) {
       const tbody = document.getElementById('attendanceBody');
-      const countEl = document.getElementById('totalCount');
-
-      countEl.textContent = records.length;
+      document.getElementById('totalCount').textContent = records.length;
+      document.getElementById('bothAttendedCount').textContent = records.filter(
+        r => r.patientAttended && r.doctorAttended
+      ).length;
 
       if (records.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="empty">لا توجد سجلات حضور مطابقة</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="empty">لا توجد سجلات حضور حالياً</td></tr>';
         return;
       }
 
       tbody.innerHTML = records.map((rec, index) => `
         <tr>
           <td><strong>${index + 1}</strong></td>
-          <td><span class="badge">${rec.appointmentId}</span></td>
-          <td><strong>${rec.patientInfo}</strong></td>
-          <td><strong>${rec.doctorInfo}</strong></td>
-          <td><span class="badge badge-time">${rec.timeText}</span></td>
+          <td><span class="badge badge-id">${rec.appointmentId}</span></td>
+          <td><strong>${rec.patientCode}</strong></td>
+          <td>
+            <span class="badge ${rec.patientAttended ? 'badge-yes' : 'badge-no'}">
+              ${rec.patientAttended ? '✅ حضر' : '❌ لم يحضر'}
+            </span>
+          </td>
+          <td><span class="time-cell">${rec.patientJoinedText}</span></td>
+          <td><strong>${rec.doctorCode}</strong></td>
+          <td>
+            <span class="badge ${rec.doctorAttended ? 'badge-yes' : 'badge-no'}">
+              ${rec.doctorAttended ? '✅ حضر' : '❌ لم يحضر'}
+            </span>
+          </td>
+          <td><span class="time-cell">${rec.doctorJoinedText}</span></td>
         </tr>
       `).join('');
     }
@@ -259,9 +246,8 @@
 
       const filtered = allRecords.filter(item =>
         item.appointmentId.toLowerCase().includes(q) ||
-        item.patientInfo.toLowerCase().includes(q) ||
-        item.doctorInfo.toLowerCase().includes(q) ||
-        item.timeText.toLowerCase().includes(q)
+        item.patientCode.toLowerCase().includes(q) ||
+        item.doctorCode.toLowerCase().includes(q)
       );
 
       renderTable(filtered);
@@ -305,7 +291,6 @@
 
     window.loadAttendance = loadAttendance;
 
-    // تشغيل الجلب التلقائي عند فتح الصفحة
     loadAttendance();
   </script>
 </body>
