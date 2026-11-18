@@ -6,8 +6,7 @@
   <title>إدارة أكواد الأطباء - Shoaa Telemedicine</title>
   <link rel="stylesheet" href="style.css">
   <script>
-    const VALID_HASH = 'c88240559301e6b9f75fb5b63bc3fc35c690e537ef9a2e22999eb7250bc9d187';
-    if (sessionStorage.getItem('shoaa_auth_token') !== VALID_HASH) {
+    if (!sessionStorage.getItem('shoaa_worker_token')) {
       window.location.replace('index.html');
     }
   </script>
@@ -83,8 +82,8 @@
     loadDoctors();
 
     function logout() {
-      sessionStorage.removeItem('shoaa_auth_token');
-      window.location.replace('index.html');
+    sessionStorage.removeItem('shoaa_worker_token');
+    window.location.replace('index.html');
     }
 
     function showLoading(show) {
