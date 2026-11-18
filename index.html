@@ -3,15 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>بوابة خدمات شعاع - Shoaa Telemedicine</title>
+  <title>بوابة خدمات التطبيق - Nitco Mobile App</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+  <!-- شاشة التحميل -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner">
+      <div class="spinner">🔄</div>
+      <p style="margin-top: 10px;">جاري التحقق من البيانات...</p>
+    </div>
+  </div>
+
   <!-- 1. قسم تسجيل الدخول -->
   <div class="container narrow" id="loginView">
     <h1>🔐 تسجيل الدخول</h1>
-    <p class="subtitle">بوابة إدارة خدمات التطبيق</p>
+    <p class="subtitle">بوابة خدمات التطبيق</p>
 
     <div id="loginMessage" class="message error"></div>
 
@@ -25,10 +33,10 @@
       <input type="password" id="passwordInput" placeholder="أدخل كلمة المرور" onkeypress="if(event.key==='Enter') handleLogin()">
     </div>
 
-    <button class="btn-primary" onclick="handleLogin()">دخول للنظام</button>
+    <button class="btn-primary" id="loginBtn" onclick="handleLogin()">دخول للنظام</button>
   </div>
 
-  <!-- 2. قسم لوحة الخدمات (يظهر بعد تسجيل الدخول) -->
+  <!-- 2. قسم لوحة الخدمات -->
   <div class="container hidden" id="dashboardView">
     <div class="top-bar">
       <span style="font-weight: bold; color: #667eea;">👋 مرحباً بك في لوحة التحكم</span>
@@ -54,41 +62,58 @@
   </div>
 
   <script>
-    const VALID_HASH = 'c88240559301e6b9f75fb5b63bc3fc35c690e537ef9a2e22999eb7250bc9d187';
+    // ⭐ ضع رابط الـ Cloudflare Worker هنا
+    const AUTH_WORKER_URL = 'https://nitcosaraffauth.nitco-mobile.workers.dev';
 
     const loginView = document.getElementById('loginView');
     const dashboardView = document.getElementById('dashboardView');
+    const overlay = document.getElementById('loadingOverlay');
 
-    // التحقق من تطابق البصمة المحفوظة في الجلسة
     window.addEventListener('DOMContentLoaded', () => {
-      if (sessionStorage.getItem('shoaa_auth_token') === VALID_HASH) {
+      if (sessionStorage.getItem('shoaa_worker_token')) {
         showDashboard();
       }
     });
 
-    // دالة التشفير باتجاه واحد (SHA-256)
-    async function sha256(text) {
-      const msgBuffer = new TextEncoder().encode(text);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
     async function handleLogin() {
       const phone = document.getElementById('phoneInput').value.trim();
-      const pass = document.getElementById('passwordInput').value.trim();
+      const password = document.getElementById('passwordInput').value.trim();
       const msgDiv = document.getElementById('loginMessage');
+      const loginBtn = document.getElementById('loginBtn');
 
-      const inputHash = await sha256(`${phone}:${pass}`);
+      if (!phone || !password) {
+        msgDiv.textContent = '⚠️ من فضلك أدخل الرقم وكلمة المرور';
+        msgDiv.style.display = 'block';
+        return;
+      }
 
-      if (inputHash === VALID_HASH) {
-        sessionStorage.setItem('shoaa_auth_token', inputHash);
-        msgDiv.style.display = 'none';
-        showDashboard();
-      } else {
-        msgDiv.textContent = '❌ رقم الهاتف أو كلمة المرور غير صحيحة';
+      overlay.classList.add('active');
+      loginBtn.disabled = true;
+      msgDiv.style.display = 'none';
+
+      try {
+        const res = await fetch(AUTH_WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'login', phone, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success && data.token) {
+          sessionStorage.setItem('shoaa_worker_token', data.token);
+          showDashboard();
+        } else {
+          msgDiv.textContent = '❌ ' + (data.error || 'رقم الهاتف أو كلمة المرور غير صحيحة');
+          msgDiv.style.display = 'block';
+        }
+      } catch (err) {
+        msgDiv.textContent = '❌ تعذر الاتصال بالسيرفر، حاول مرة أخرى';
         msgDiv.style.display = 'block';
       }
+
+      overlay.classList.remove('active');
+      loginBtn.disabled = false;
     }
 
     function showDashboard() {
@@ -97,7 +122,7 @@
     }
 
     function logout() {
-      sessionStorage.removeItem('shoaa_auth_token');
+      sessionStorage.removeItem('shoaa_worker_token');
       dashboardView.classList.add('hidden');
       loginView.classList.remove('hidden');
       document.getElementById('phoneInput').value = '';
