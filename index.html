@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>بوابة خدمات التطبيق - Nitco Mobile Application</title>
+  <title>بوابة خدمات شعاع - Shoaa Telemedicine</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,7 +11,7 @@
   <!-- 1. قسم تسجيل الدخول -->
   <div class="container narrow" id="loginView">
     <h1>🔐 تسجيل الدخول</h1>
-    <p class="subtitle">بوابة خدمات التطبيق</p>
+    <p class="subtitle">بوابة إدارة خدمات التطبيق</p>
 
     <div id="loginMessage" class="message error"></div>
 
@@ -39,14 +39,12 @@
     <p class="subtitle">اختر الخدمة المطلوبة للمتابعة</p>
 
     <div class="services-grid">
-      <!-- رابط الخدمة الأولى -->
       <a href="attendance.html" class="service-card">
         <div class="service-icon">📋</div>
         <div class="service-title">حضور الطب الاتصالي</div>
         <div class="service-desc">متابعة وسجلات حضور العيادات الاتصالية للمرضى والأطباء</div>
       </a>
 
-      <!-- رابط الخدمة الثانية -->
       <a href="doctors.html" class="service-card">
         <div class="service-icon">👨‍⚕️</div>
         <div class="service-title">إدارة أكواد الأطباء</div>
@@ -56,26 +54,35 @@
   </div>
 
   <script>
-    const VALID_USER = '0123456789';
-    const VALID_PASS = '1234';
+    const VALID_HASH = 'c88240559301e6b9f75fb5b63bc3fc35c690e537ef9a2e22999eb7250bc9d187';
 
     const loginView = document.getElementById('loginView');
     const dashboardView = document.getElementById('dashboardView');
 
-    // فحص حالة تسجيل الدخول عند فتح الصفحة
+    // التحقق من تطابق البصمة المحفوظة في الجلسة
     window.addEventListener('DOMContentLoaded', () => {
-      if (sessionStorage.getItem('shoaa_logged_in') === 'true') {
+      if (sessionStorage.getItem('shoaa_auth_token') === VALID_HASH) {
         showDashboard();
       }
     });
 
-    function handleLogin() {
+    // دالة التشفير باتجاه واحد (SHA-256)
+    async function sha256(text) {
+      const msgBuffer = new TextEncoder().encode(text);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function handleLogin() {
       const phone = document.getElementById('phoneInput').value.trim();
       const pass = document.getElementById('passwordInput').value.trim();
       const msgDiv = document.getElementById('loginMessage');
 
-      if (phone === VALID_USER && pass === VALID_PASS) {
-        sessionStorage.setItem('shoaa_logged_in', 'true');
+      const inputHash = await sha256(`${phone}:${pass}`);
+
+      if (inputHash === VALID_HASH) {
+        sessionStorage.setItem('shoaa_auth_token', inputHash);
         msgDiv.style.display = 'none';
         showDashboard();
       } else {
@@ -90,7 +97,7 @@
     }
 
     function logout() {
-      sessionStorage.removeItem('shoaa_logged_in');
+      sessionStorage.removeItem('shoaa_auth_token');
       dashboardView.classList.add('hidden');
       loginView.classList.remove('hidden');
       document.getElementById('phoneInput').value = '';
