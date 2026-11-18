@@ -5,6 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>بوابة خدمات التطبيق - Nitco Mobile App</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* تنسيق حاوية الباسورد وأيقونة العين */
+    .password-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .password-wrapper input {
+      padding-left: 48px; /* مساحة لأيقونة العين في اليسار مع اتجاه RTL */
+    }
+
+    .toggle-password {
+      position: absolute;
+      left: 14px;
+      background: none;
+      border: none;
+      padding: 4px;
+      font-size: 20px;
+      cursor: pointer;
+      color: #667eea;
+      user-select: none;
+      line-height: 1;
+    }
+
+    .toggle-password:hover {
+      transform: scale(1.1);
+    }
+  </style>
 </head>
 <body>
 
@@ -30,7 +59,12 @@
 
     <div class="form-group">
       <label for="passwordInput">كلمة المرور</label>
-      <input type="password" id="passwordInput" placeholder="أدخل كلمة المرور" onkeypress="if(event.key==='Enter') handleLogin()">
+      <div class="password-wrapper">
+        <input type="password" id="passwordInput" placeholder="أدخل كلمة المرور" onkeypress="if(event.key==='Enter') handleLogin()">
+        <button type="button" class="toggle-password" id="togglePassBtn" onclick="togglePassword()" title="إظهار / إخفاء كلمة المرور">
+          👁️
+        </button>
+      </div>
     </div>
 
     <button class="btn-primary" id="loginBtn" onclick="handleLogin()">دخول للنظام</button>
@@ -74,6 +108,20 @@
         showDashboard();
       }
     });
+
+    // دالة إظهار وإخفاء كلمة المرور
+    function togglePassword() {
+      const passInput = document.getElementById('passwordInput');
+      const toggleBtn = document.getElementById('togglePassBtn');
+
+      if (passInput.type === 'password') {
+        passInput.type = 'text';
+        toggleBtn.textContent = '🙈';
+      } else {
+        passInput.type = 'password';
+        toggleBtn.textContent = '👁️';
+      }
+    }
 
     async function handleLogin() {
       const phone = document.getElementById('phoneInput').value.trim();
@@ -127,6 +175,8 @@
       loginView.classList.remove('hidden');
       document.getElementById('phoneInput').value = '';
       document.getElementById('passwordInput').value = '';
+      document.getElementById('passwordInput').type = 'password';
+      document.getElementById('togglePassBtn').textContent = '👁️';
     }
   </script>
 </body>
